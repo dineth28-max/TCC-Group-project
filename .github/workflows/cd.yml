@@ -21,6 +21,19 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
     steps:
+      - name: checkout repo (for nginx config)
+        uses: actions/checkout@v4
+        with:
+          path: repo
+
+      - name: sync nginx config to deploy dir
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -rf "$DEPLOY_DIR/nginx/nginx.conf"
+          sudo mkdir -p "$DEPLOY_DIR/nginx"
+          sudo cp "$GITHUB_WORKSPACE/repo/nginx/nginx.conf" "$DEPLOY_DIR/nginx/nginx.conf"
+
       - name: docker login
         shell: bash
         run: |

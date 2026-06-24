@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background: #f5f3ff;
+  min-height: 100vh;
+}
+
+::selection {
+  background: #ddd6fe;
+}
+
+input,
+select,
+textarea {
+  outline-color: #7c3aed;
+}

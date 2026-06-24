@@ -12,6 +12,7 @@
 # credentials.*
 # *.pem
 # *.key
+tc.yml
 
 # .NET (backend/Csmas.Api)
 backend/**/bin/

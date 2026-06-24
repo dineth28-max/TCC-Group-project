@@ -82,7 +82,18 @@ public class AttendanceController : TenantScopedController
             GeoLat = request.Lat,
             GeoLng = request.Lng,
         });
-        await _db.SaveChangesAsync();
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Two near-simultaneous check-ins both passed the alreadyCheckedIn check above before
+            // either committed — the unique (SessionId, StudentId) index caught the race. Surface
+            // it as the same friendly message instead of a raw 500.
+            return BadRequest(new { message = "You have already checked in to this session." });
+        }
 
         return Ok(new CheckInResponse(status.ToString(), distance));
     }

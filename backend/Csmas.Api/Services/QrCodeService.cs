@@ -62,6 +62,6 @@ public class QrCodeService
     {
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_jwtOptions.Secret));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(raw));
-        return Convert.ToHexString(hash)[..16]; // short signature is enough for tamper-evidence here
+        return Convert.ToHexString(hash); // full 256-bit MAC — truncating it weakens tamper-evidence for no benefit
     }
 }

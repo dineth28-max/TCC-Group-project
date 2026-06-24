@@ -1,0 +1,41 @@
+name: CD part
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        working-directory: /TCC
+
+    env:
+      DEPLOY_DIR: /TCC
+      COMPOSE_FILE: tc.yml
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+    steps:
+      - name: docker login
+        shell: bash
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: recreate containers with latest images
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_DIR"
+
+          echo "Pulling latest images"
+          sudo -E docker compose -f "$COMPOSE_FILE" pull
+
+          sudo -E docker compose -f "$COMPOSE_FILE" up -d
+
+          echo "Cleaning up old images"
+          sudo docker image prune -f

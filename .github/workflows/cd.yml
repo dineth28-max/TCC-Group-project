@@ -53,7 +53,7 @@ jobs:
           sudo docker rm -f csmas.mysql csmas.backend csmas.frontend csmas.nginx csmas.adminer 2>/dev/null || true
 
           echo "Checking for other containers still holding our host ports"
-          for port in 3307 18080 3000 80 18081; do
+          for port in 3307 18080 3000 8090 18081; do
             cid=$(sudo docker ps -q --filter "publish=$port")
             if [ -n "$cid" ]; then
               echo "Port $port is held by container $cid, stopping it"
@@ -66,6 +66,9 @@ jobs:
           sudo systemctl disable nginx 2>/dev/null || true
           sudo systemctl stop apache2 2>/dev/null || true
           sudo systemctl disable apache2 2>/dev/null || true
+
+
+
 
       - name: recreate containers with latest images
         shell: bash

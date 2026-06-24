@@ -49,6 +49,9 @@ jobs:
           echo "Stopping this project's existing containers (if any)"
           sudo -E docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
 
+          echo "Force-removing any stale containers with our fixed names (from old/renamed compose projects)"
+          sudo docker rm -f csmas.mysql csmas.backend csmas.frontend csmas.nginx csmas.adminer 2>/dev/null || true
+
           echo "Checking for other containers still holding our host ports"
           for port in 3307 18080 3000 80 18081; do
             cid=$(sudo docker ps -q --filter "publish=$port")

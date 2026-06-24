@@ -57,6 +57,12 @@ jobs:
             fi
           done
 
+          echo "Stopping any host-level web server holding port 80/443"
+          sudo systemctl stop nginx 2>/dev/null || true
+          sudo systemctl disable nginx 2>/dev/null || true
+          sudo systemctl stop apache2 2>/dev/null || true
+          sudo systemctl disable apache2 2>/dev/null || true
+
       - name: recreate containers with latest images
         shell: bash
         run: |

@@ -26,6 +26,24 @@ jobs:
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
+      - name: free ports held by stale containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_DIR"
+
+          echo "Stopping this project's existing containers (if any)"
+          sudo -E docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
+
+          echo "Checking for other containers still holding our host ports"
+          for port in 3307 18080 3000 80 18081; do
+            cid=$(sudo docker ps -q --filter "publish=$port")
+            if [ -n "$cid" ]; then
+              echo "Port $port is held by container $cid, stopping it"
+              sudo docker stop "$cid"
+            fi
+          done
+
       - name: recreate containers with latest images
         shell: bash
         run: |

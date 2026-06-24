@@ -16,7 +16,8 @@ jobs:
         working-directory: /home/ubuntu/TCC
 
     env:
-      DEPLOY_DIR: /home/ubuntu/TCC
+      DEPLOY_DIR: /home/ubuntu/TCC/nginx
+
       COMPOSE_FILE: tc.yml
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
@@ -30,9 +31,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo rm -rf "$DEPLOY_DIR/nginx/nginx.conf"
-          sudo mkdir -p "$DEPLOY_DIR/nginx"
-          sudo cp "$GITHUB_WORKSPACE/repo/nginx/nginx.conf" "$DEPLOY_DIR/nginx/nginx.conf"
+          sudo rm -rf "$DEPLOY_DIR/nginx.conf"
+          sudo mkdir -p "$DEPLOY_DIR"
+          sudo cp "$GITHUB_WORKSPACE/repo/nginx/nginx.conf" "$DEPLOY_DIR/nginx.conf"
 
       - name: docker login
         shell: bash

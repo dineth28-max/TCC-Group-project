@@ -133,6 +133,8 @@ export default function BranchesManagement() {
                   id="branch-lat"
                   type="number"
                   step="0.000001"
+                  min="-90"
+                  max="90"
                   required
                   value={form.geoLat}
                   onChange={(e) => setForm({ ...form, geoLat: e.target.value })}
@@ -145,6 +147,8 @@ export default function BranchesManagement() {
                   id="branch-lng"
                   type="number"
                   step="0.000001"
+                  min="-180"
+                  max="180"
                   required
                   value={form.geoLng}
                   onChange={(e) => setForm({ ...form, geoLng: e.target.value })}

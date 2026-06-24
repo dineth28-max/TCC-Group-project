@@ -53,6 +53,8 @@ export default function AttendanceReports() {
             <input
               id="attendance-threshold"
               type="number"
+              min="0"
+              max="100"
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
               className="w-20 border border-slate-300 rounded px-2 py-1 text-sm"
@@ -101,6 +103,8 @@ export default function AttendanceReports() {
             <input
               aria-label="Export year"
               type="number"
+              min="2000"
+              max="2100"
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
               className="w-24 border border-slate-300 rounded px-2 py-1 text-sm"

@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<Institute>(e =>
         {
+            e.Property(i => i.AttendanceThresholdPercent).HasPrecision(5, 2);
             e.HasQueryFilter(i => _tenantProvider.BypassTenantFilter || i.Id == _tenantProvider.InstituteId);
         });
 

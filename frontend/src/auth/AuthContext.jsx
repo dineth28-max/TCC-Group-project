@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import apiClient, { setAccessToken } from "../api/client";
+import apiClient, { setAccessToken, setAuthExpiredHandler } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -22,6 +22,13 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    // If the access token expires mid-session and the refresh token is also gone (expired/
+    // revoked), the response interceptor in api/client.js calls this to force the user back to
+    // a logged-out state instead of leaving them stuck behind a wall of silent 401s.
+    setAuthExpiredHandler(() => {
+      setUser(null);
+      setStatus("anonymous");
+    });
     tryRestoreSession();
   }, []);
 

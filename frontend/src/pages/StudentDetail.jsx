@@ -33,6 +33,7 @@ export default function StudentDetail() {
   const [selectedParentId, setSelectedParentId] = useState("");
   const [newParent, setNewParent] = useState({ fullName: "", email: "" });
   const [credentials, setCredentials] = useState({ loginEmail: "", loginPassword: "" });
+  const [busy, setBusy] = useState(false);
 
   async function load() {
     const data = await getStudent(id);
@@ -112,12 +113,18 @@ export default function StudentDetail() {
   }
 
   async function handleToggleStatus() {
-    if (student.status === "Active") {
-      await deactivateStudent(id);
-    } else {
-      await reactivateStudent(id);
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (student.status === "Active") {
+        await deactivateStudent(id);
+      } else {
+        await reactivateStudent(id);
+      }
+      await load();
+    } finally {
+      setBusy(false);
     }
-    load();
   }
 
   async function handleUpload(e) {
@@ -135,13 +142,25 @@ export default function StudentDetail() {
   }
 
   async function handleEnroll(classId) {
-    await enrollStudent(id, Number(classId));
-    load();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await enrollStudent(id, Number(classId));
+      await load();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleUnenroll(classId) {
-    await unenrollStudent(id, classId);
-    load();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await unenrollStudent(id, classId);
+      await load();
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (!student || !form) {
@@ -169,7 +188,7 @@ export default function StudentDetail() {
               <button onClick={() => setEditing((v) => !v)} className="text-sm text-violet-700 hover:underline">
                 {editing ? "Cancel" : "Edit"}
               </button>
-              <button onClick={handleToggleStatus} className="text-sm text-slate-500 hover:text-red-600">
+              <button onClick={handleToggleStatus} disabled={busy} className="text-sm text-slate-500 hover:text-red-600 disabled:opacity-50">
                 {student.status === "Active" ? "Deactivate" : "Reactivate"}
               </button>
             </div>
@@ -250,7 +269,7 @@ export default function StudentDetail() {
                 {student.classes.map((c) => (
                   <li key={c.id} className="flex items-center justify-between">
                     <span>{c.subject}</span>
-                    <button onClick={() => handleUnenroll(c.id)} className="text-xs text-slate-500 hover:text-red-600">
+                    <button onClick={() => handleUnenroll(c.id)} disabled={busy} className="text-xs text-slate-500 hover:text-red-600 disabled:opacity-50">
                       Remove
                     </button>
                   </li>
@@ -262,7 +281,8 @@ export default function StudentDetail() {
                 aria-label="Enroll in a class"
                 onChange={(e) => e.target.value && handleEnroll(e.target.value)}
                 value=""
-                className="border border-slate-300 rounded px-2 py-1 text-sm"
+                disabled={busy}
+                className="border border-slate-300 rounded px-2 py-1 text-sm disabled:opacity-50"
               >
                 <option value="">+ Enroll in a class…</option>
                 {availableClasses.map((c) => (

@@ -74,6 +74,7 @@ export default function TeacherDashboard() {
       const session = await createSession({ classId: Number(selectedClassId), graceMinutes: 10 });
       setActiveSession(session);
       setRecentSessions((prev) => [session, ...prev]);
+      if (session.sessionDate === TODAY) setTodaySessions((prev) => [session, ...prev]);
     } catch (err) {
       setError(err.response?.data?.message || "Could not create session.");
     }

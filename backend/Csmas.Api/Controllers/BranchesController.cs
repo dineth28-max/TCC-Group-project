@@ -55,6 +55,10 @@ public class BranchesController : TenantScopedController
         {
             return BadRequest(new { message = "Branch name is required." });
         }
+        if (request.GeoLat < -90 || request.GeoLat > 90 || request.GeoLng < -180 || request.GeoLng > 180)
+        {
+            return BadRequest(new { message = "Geo latitude must be between -90 and 90, and longitude between -180 and 180." });
+        }
 
         var branch = new Branch
         {
@@ -77,6 +81,10 @@ public class BranchesController : TenantScopedController
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             return BadRequest(new { message = "Branch name is required." });
+        }
+        if (request.GeoLat < -90 || request.GeoLat > 90 || request.GeoLng < -180 || request.GeoLng > 180)
+        {
+            return BadRequest(new { message = "Geo latitude must be between -90 and 90, and longitude between -180 and 180." });
         }
 
         var branch = await _db.Branches.FirstOrDefaultAsync(b => b.Id == id);

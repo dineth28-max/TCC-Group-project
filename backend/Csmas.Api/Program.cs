@@ -3,6 +3,7 @@ using Csmas.Api.Auth;
 using Csmas.Api.Data;
 using Csmas.Api.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -36,6 +37,17 @@ builder.Services.AddScoped<Csmas.Api.Services.NotificationTemplateService>();
 builder.Services.AddScoped<Csmas.Api.Services.NotificationQueueService>();
 builder.Services.AddScoped<Csmas.Api.Services.BillingService>();
 builder.Services.AddHostedService<Csmas.Api.Services.BillingBackgroundService>();
+
+// ---- Payments (Phase 15): Data Protection keys persist to a mounted volume (docker-compose's
+// backend_keys) — without that, a container recreate would make every encrypted payment
+// credential/bank account number permanently undecryptable, not just unavailable. ----
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"))
+    .SetApplicationName("Csmas");
+builder.Services.AddSingleton<Csmas.Api.Services.SecretEncryptionService>();
+builder.Services.AddScoped<Csmas.Api.Services.PaymentWebhookService>();
+builder.Services.AddScoped<Csmas.Api.Services.PaymentService>();
+builder.Services.AddScoped<Csmas.Api.Services.AuditLogService>();
 
 // ---- Notification Engine (Phase 6) ----
 builder.Services.Configure<Csmas.Api.Services.SmtpOptions>(builder.Configuration.GetSection("Smtp"));

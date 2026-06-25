@@ -11,4 +11,7 @@ public record MeResponse(
     string Role,
     int InstituteId,
     string InstituteName,
-    int? BranchId);
+    int? BranchId,
+    bool MustChangePassword);
+
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

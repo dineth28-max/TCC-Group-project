@@ -152,7 +152,38 @@ public class AuthController : ControllerBase
             user.Role.ToString(),
             user.InstituteId,
             user.Institute?.Name ?? string.Empty,
-            user.BranchId));
+            user.BranchId,
+            user.MustChangePassword));
+    }
+
+    /// <summary>
+    /// Phase 16: lets any authenticated user set their own password, required before reaching any
+    /// dashboard while MustChangePassword is set (admin-created/reset accounts) but usable any time
+    /// otherwise. Requires the current password, so a stolen access token alone can't change it.
+    /// </summary>
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
+        {
+            return BadRequest(new { message = "New password must be at least 8 characters." });
+        }
+
+        var userId = int.Parse(User.FindFirst("sub")!.Value);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        var verifyResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+        if (verifyResult == PasswordVerificationResult.Failed)
+        {
+            return BadRequest(new { message = "Current password is incorrect." });
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
+        user.MustChangePassword = false;
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     private void SetRefreshCookie(string plainText)

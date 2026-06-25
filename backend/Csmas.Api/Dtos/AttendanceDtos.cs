@@ -1,6 +1,8 @@
 namespace Csmas.Api.Dtos;
 
-public record CreateSessionRequest(int ClassId, int GraceMinutes = 10);
+public record CreateSessionRequest(int ClassId, int GraceMinutes = 10, int QrDurationMinutes = 10);
+
+public record RegenerateQrRequest(int QrDurationMinutes = 10);
 
 public record SessionResponse(
     int Id,

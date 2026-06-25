@@ -1,6 +1,7 @@
 using Csmas.Api.Data;
 using Csmas.Api.Domain;
 using Csmas.Api.Dtos;
+using Csmas.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,11 +21,13 @@ public class MeController : TenantScopedController
 {
     private readonly AppDbContext _db;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly PaymentService _paymentService;
 
-    public MeController(AppDbContext db, IPasswordHasher<User> passwordHasher)
+    public MeController(AppDbContext db, IPasswordHasher<User> passwordHasher, PaymentService paymentService)
     {
         _db = db;
         _passwordHasher = passwordHasher;
+        _paymentService = paymentService;
     }
 
     private Task<Student?> MyStudent() =>
@@ -80,6 +83,24 @@ public class MeController : TenantScopedController
 
         return Ok(new PortalFeeResponse(invoices.Sum(i => i.TotalDue - i.AmountPaid), invoices.Sum(i => i.AmountPaid), responses));
     }
+
+    /// <summary>Phase 15: pay one of my own outstanding invoices via the institute's configured gateway.</summary>
+    [HttpPost("payments/checkout")]
+    public async Task<ActionResult<PaymentTransactionResponse>> Checkout([FromBody] CheckoutRequest request)
+    {
+        var student = await MyStudent();
+        if (student is null) return NotFound(new { message = "No student profile is linked to this account." });
+
+        var invoice = await _db.Invoices.Include(i => i.Class).FirstOrDefaultAsync(i => i.Id == request.InvoiceId);
+        if (invoice is null || invoice.StudentId != student.Id) return NotFound();
+
+        var (tx, checkoutUrl, error) = await _paymentService.InitiateCheckout(invoice, CurrentUserId, "/student/payments");
+        if (tx is null) return BadRequest(new { message = error });
+        return Ok(ToTransactionResponse(tx, checkoutUrl));
+    }
+
+    private static PaymentTransactionResponse ToTransactionResponse(PaymentTransaction t, string? checkoutUrl = null) => new(
+        t.Id, t.InvoiceId, t.Amount, t.Status.ToString(), t.GatewayProvider, t.GatewayReference, t.CreatedAt, t.CompletedAt, checkoutUrl);
 
     /// <summary>
     /// Self-service parent linking (Phase 13): a student adds their own parent's login here,

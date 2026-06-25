@@ -10,11 +10,12 @@ namespace Csmas.Api.Controllers;
 /// <summary>
 /// Weekly recurring timetable slots with conflict detection (plan.md §6 F5): a new slot is
 /// rejected if it overlaps another slot in the same branch, on the same day, that shares either
-/// the same teacher or the same room.
+/// the same teacher or the same room. Teachers can list/create/delete slots too (Phase 14), but
+/// only for classes they're assigned to teach — same conflict check, no admin involvement needed.
 /// </summary>
 [ApiController]
 [Route("api/timetable")]
-[Authorize(Roles = "SystemAdmin,BranchAdmin")]
+[Authorize(Roles = "SystemAdmin,BranchAdmin,Teacher")]
 public class TimetableController : TenantScopedController
 {
     private readonly AppDbContext _db;
@@ -28,7 +29,8 @@ public class TimetableController : TenantScopedController
     public async Task<ActionResult<List<TimetableSlotResponse>>> List([FromQuery] int? branchId)
     {
         var query = _db.TimetableSlots.Include(t => t.Class).ThenInclude(c => c!.TeacherUser).AsQueryable();
-        if (IsBranchScoped) query = query.Where(t => t.BranchId == CurrentBranchId);
+        if (User.IsInRole("Teacher")) query = query.Where(t => t.Class!.TeacherUserId == CurrentUserId);
+        else if (IsBranchScoped) query = query.Where(t => t.BranchId == CurrentBranchId);
         else if (branchId.HasValue) query = query.Where(t => t.BranchId == branchId);
 
         var slots = await query.ToListAsync();
@@ -49,7 +51,8 @@ public class TimetableController : TenantScopedController
 
         var klass = await _db.Classes.Include(c => c.TeacherUser).FirstOrDefaultAsync(c => c.Id == request.ClassId);
         if (klass is null) return BadRequest(new { message = "Class not found." });
-        if (IsBranchScoped && klass.BranchId != CurrentBranchId) return Forbid();
+        if (User.IsInRole("Teacher") && klass.TeacherUserId != CurrentUserId) return Forbid();
+        if (!User.IsInRole("Teacher") && IsBranchScoped && klass.BranchId != CurrentBranchId) return Forbid();
         if (!klass.TeacherUserId.HasValue)
         {
             return BadRequest(new { message = $"\"{klass.Subject}\" has no teacher assigned. Assign a teacher to this class before scheduling a slot." });
@@ -90,9 +93,10 @@ public class TimetableController : TenantScopedController
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var slot = await _db.TimetableSlots.FindAsync(id);
+        var slot = await _db.TimetableSlots.Include(t => t.Class).FirstOrDefaultAsync(t => t.Id == id);
         if (slot is null) return NotFound();
-        if (IsBranchScoped && slot.BranchId != CurrentBranchId) return NotFound();
+        if (User.IsInRole("Teacher") && slot.Class?.TeacherUserId != CurrentUserId) return NotFound();
+        if (!User.IsInRole("Teacher") && IsBranchScoped && slot.BranchId != CurrentBranchId) return NotFound();
 
         _db.TimetableSlots.Remove(slot);
         await _db.SaveChangesAsync();

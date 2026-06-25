@@ -51,8 +51,16 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Used after a forced password change so the mustChangePassword flag clears without a full
+  // page reload — re-fetches "who am I" and replaces the cached user object.
+  async function refreshUser() {
+    const meRes = await apiClient.get("/auth/me");
+    setUser(meRes.data);
+    return meRes.data;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, status, login, logout }}>
+    <AuthContext.Provider value={{ user, status, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

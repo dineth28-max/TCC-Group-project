@@ -32,6 +32,13 @@ public class AppDbContext : DbContext
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<TimetableSlot> TimetableSlots => Set<TimetableSlot>();
+    public DbSet<PaymentAccountSettings> PaymentAccountSettings => Set<PaymentAccountSettings>();
+    public DbSet<RevenueSplitSettings> RevenueSplitSettings => Set<RevenueSplitSettings>();
+    public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+    public DbSet<TeacherEarning> TeacherEarnings => Set<TeacherEarning>();
+    public DbSet<TeacherBankDetail> TeacherBankDetails => Set<TeacherBankDetail>();
+    public DbSet<InstituteBankDetail> InstituteBankDetails => Set<InstituteBankDetail>();
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -187,6 +194,73 @@ public class AppDbContext : DbContext
             e.Property(p => p.Method).HasMaxLength(20);
             e.HasIndex(p => p.InstituteId);
             e.HasQueryFilter(p => _tenantProvider.BypassTenantFilter || p.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<PaymentAccountSettings>(e =>
+        {
+            e.HasIndex(p => p.InstituteId).IsUnique();
+            e.HasQueryFilter(p => _tenantProvider.BypassTenantFilter || p.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<RevenueSplitSettings>(e =>
+        {
+            e.Property(r => r.CommissionPercent).HasPrecision(5, 2);
+            e.HasIndex(r => r.InstituteId).IsUnique();
+            e.HasQueryFilter(r => _tenantProvider.BypassTenantFilter || r.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<PaymentTransaction>(e =>
+        {
+            e.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(t => t.Amount).HasPrecision(18, 2);
+            e.HasIndex(t => t.InstituteId);
+            e.HasIndex(t => t.StudentId);
+            e.HasIndex(t => t.InvoiceId);
+            // Financial records — none of these must ever be hard-deletable out from under a transaction.
+            e.HasOne(t => t.Invoice).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(t => t.Student).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(t => t.InitiatedByUser).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(t => t.Payment).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasQueryFilter(t => _tenantProvider.BypassTenantFilter || t.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<TeacherEarning>(e =>
+        {
+            e.Property(t => t.GrossAmount).HasPrecision(18, 2);
+            e.Property(t => t.CommissionPercent).HasPrecision(5, 2);
+            e.Property(t => t.CommissionAmount).HasPrecision(18, 2);
+            e.Property(t => t.NetAmount).HasPrecision(18, 2);
+            e.Property(t => t.PayoutStatus).HasMaxLength(20);
+            e.HasIndex(t => t.PaymentTransactionId).IsUnique();
+            e.HasIndex(t => t.InstituteId);
+            e.HasIndex(t => t.TeacherUserId);
+            e.HasOne(t => t.PaymentTransaction).WithMany().OnDelete(DeleteBehavior.Restrict);
+            // Financial ledger — a teacher account must never cascade-delete their earnings history.
+            e.HasOne(t => t.TeacherUser).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasQueryFilter(t => _tenantProvider.BypassTenantFilter || t.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<TeacherBankDetail>(e =>
+        {
+            e.HasIndex(t => t.TeacherUserId).IsUnique();
+            e.HasIndex(t => t.InstituteId);
+            // Same Restrict invariant as TeacherEarning — payout details must outlive a teacher
+            // account being removed, not silently vanish with it.
+            e.HasOne(t => t.TeacherUser).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasQueryFilter(t => _tenantProvider.BypassTenantFilter || t.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<InstituteBankDetail>(e =>
+        {
+            e.HasIndex(i => i.InstituteId).IsUnique();
+            e.HasQueryFilter(i => _tenantProvider.BypassTenantFilter || i.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<AuditLogEntry>(e =>
+        {
+            e.HasIndex(a => new { a.InstituteId, a.CreatedAt });
+            e.HasOne(a => a.ActorUser).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasQueryFilter(a => _tenantProvider.BypassTenantFilter || a.InstituteId == _tenantProvider.InstituteId);
         });
 
         base.OnModelCreating(modelBuilder);

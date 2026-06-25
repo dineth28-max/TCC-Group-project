@@ -128,24 +128,12 @@ public class FeesController : TenantScopedController
         if (invoice is null) return NotFound();
         if (IsBranchScoped && invoice.Student?.BranchId != CurrentBranchId) return NotFound();
         if (request.Amount <= 0) return BadRequest(new { message = "Payment amount must be greater than zero." });
-
-        _db.Payments.Add(new Payment
+        if (request.Amount > invoice.TotalDue - invoice.AmountPaid)
         {
-            InstituteId = invoice.InstituteId,
-            InvoiceId = invoice.Id,
-            Amount = request.Amount,
-            Method = request.Method,
-            RecordedByUserId = CurrentUserId,
-        });
+            return BadRequest(new { message = "Payment amount exceeds the invoice's remaining due." });
+        }
 
-        invoice.AmountPaid += request.Amount;
-        invoice.Status = invoice.AmountPaid >= invoice.TotalDue
-            ? InvoiceStatus.Paid
-            : invoice.AmountPaid > 0
-                ? InvoiceStatus.Partial
-                : invoice.Status;
-
-        await _db.SaveChangesAsync();
+        await _billingService.ApplyPayment(invoice, request.Amount, request.Method, CurrentUserId);
         return Ok(ToResponse(invoice));
     }
 

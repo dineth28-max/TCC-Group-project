@@ -115,6 +115,39 @@ namespace Csmas.Api.Migrations
                     b.ToTable("Attendances");
                 });
 
+            modelBuilder.Entity("Csmas.Api.Domain.AuditLogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ActorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetDescription")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("InstituteId", "CreatedAt");
+
+                    b.ToTable("AuditLogEntries");
+                });
+
             modelBuilder.Entity("Csmas.Api.Domain.Branch", b =>
                 {
                     b.Property<int>("Id")
@@ -322,6 +355,46 @@ namespace Csmas.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Institutes");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.InstituteBankDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountHolderName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("AccountNumberEncrypted")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BranchName")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoutingOrSwiftCode")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstituteId")
+                        .IsUnique();
+
+                    b.ToTable("InstituteBankDetails");
                 });
 
             modelBuilder.Entity("Csmas.Api.Domain.Invoice", b =>
@@ -563,6 +636,104 @@ namespace Csmas.Api.Migrations
                     b.ToTable("Payments");
                 });
 
+            modelBuilder.Entity("Csmas.Api.Domain.PaymentAccountSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountIdentifier")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ApiKeyEncrypted")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ApiSecretEncrypted")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("GatewayProvider")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("WebhookSecretEncrypted")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstituteId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentAccountSettings");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.PaymentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GatewayProvider")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("GatewayReference")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("InitiatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InitiatedByUserId");
+
+                    b.HasIndex("InstituteId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("PaymentTransactions");
+                });
+
             modelBuilder.Entity("Csmas.Api.Domain.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -595,6 +766,32 @@ namespace Csmas.Api.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.RevenueSplitSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CommissionPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstituteId")
+                        .IsUnique();
+
+                    b.ToTable("RevenueSplitSettings");
                 });
 
             modelBuilder.Entity("Csmas.Api.Domain.Session", b =>
@@ -767,6 +964,98 @@ namespace Csmas.Api.Migrations
                     b.ToTable("StudentDocuments");
                 });
 
+            modelBuilder.Entity("Csmas.Api.Domain.TeacherBankDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountHolderName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("AccountNumberEncrypted")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeacherUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstituteId");
+
+                    b.HasIndex("TeacherUserId")
+                        .IsUnique();
+
+                    b.ToTable("TeacherBankDetails");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.TeacherEarning", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CommissionAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CommissionPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("GrossAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("InstituteId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PaymentTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayoutStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("TeacherUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstituteId");
+
+                    b.HasIndex("PaymentTransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("TeacherUserId");
+
+                    b.ToTable("TeacherEarnings");
+                });
+
             modelBuilder.Entity("Csmas.Api.Domain.TimetableSlot", b =>
                 {
                     b.Property<int>("Id")
@@ -817,11 +1106,17 @@ namespace Csmas.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasColumnType("longtext");
+
                     b.Property<int?>("BranchId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<DateOnly?>("DateOfJoining")
+                        .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -840,8 +1135,17 @@ namespace Csmas.Api.Migrations
                     b.Property<DateTime?>("LockoutUntil")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Role")
@@ -853,6 +1157,9 @@ namespace Csmas.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Subjects")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -892,6 +1199,17 @@ namespace Csmas.Api.Migrations
                     b.Navigation("Session");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.AuditLogEntry", b =>
+                {
+                    b.HasOne("Csmas.Api.Domain.User", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActorUser");
                 });
 
             modelBuilder.Entity("Csmas.Api.Domain.Branch", b =>
@@ -1023,6 +1341,40 @@ namespace Csmas.Api.Migrations
                     b.Navigation("Invoice");
                 });
 
+            modelBuilder.Entity("Csmas.Api.Domain.PaymentTransaction", b =>
+                {
+                    b.HasOne("Csmas.Api.Domain.User", "InitiatedByUser")
+                        .WithMany()
+                        .HasForeignKey("InitiatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Csmas.Api.Domain.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Csmas.Api.Domain.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Csmas.Api.Domain.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("InitiatedByUser");
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("Csmas.Api.Domain.RefreshToken", b =>
                 {
                     b.HasOne("Csmas.Api.Domain.User", "User")
@@ -1079,6 +1431,36 @@ namespace Csmas.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.TeacherBankDetail", b =>
+                {
+                    b.HasOne("Csmas.Api.Domain.User", "TeacherUser")
+                        .WithMany()
+                        .HasForeignKey("TeacherUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TeacherUser");
+                });
+
+            modelBuilder.Entity("Csmas.Api.Domain.TeacherEarning", b =>
+                {
+                    b.HasOne("Csmas.Api.Domain.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Csmas.Api.Domain.User", "TeacherUser")
+                        .WithMany()
+                        .HasForeignKey("TeacherUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PaymentTransaction");
+
+                    b.Navigation("TeacherUser");
                 });
 
             modelBuilder.Entity("Csmas.Api.Domain.TimetableSlot", b =>

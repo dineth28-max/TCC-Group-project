@@ -1,3 +1,4 @@
+using System.Data;
 using Csmas.Api.Auth;
 using Csmas.Api.Data;
 using Csmas.Api.Domain;
@@ -39,8 +40,18 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
+        // Row-lock this user for the rest of the attempt so two concurrent failed logins (exactly
+        // the brute-force pattern this counter exists to catch) can't both read the same starting
+        // FailedLoginCount and each save a lost +1 instead of the lockout threshold being reached
+        // correctly — same read-modify-write race already fixed elsewhere (PaymentService) with a
+        // row lock under READ COMMITTED.
+        await using var lockTx = await _db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+        await _db.Database.ExecuteSqlInterpolatedAsync($"SELECT Id FROM Users WHERE Id = {user.Id} FOR UPDATE");
+        await _db.Entry(user).ReloadAsync();
+
         if (user.LockoutUntil is { } lockoutUntil && lockoutUntil > DateTime.UtcNow)
         {
+            await lockTx.CommitAsync();
             return Unauthorized(new
             {
                 message = $"Account locked due to repeated failed attempts. Try again after {lockoutUntil:HH:mm} UTC."
@@ -57,11 +68,13 @@ public class AuthController : ControllerBase
                 user.FailedLoginCount = 0;
             }
             await _db.SaveChangesAsync();
+            await lockTx.CommitAsync();
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
         if (user.Status != UserStatus.Active)
         {
+            await lockTx.CommitAsync();
             return Unauthorized(new { message = "This account is not active. Contact your administrator." });
         }
 
@@ -76,6 +89,7 @@ public class AuthController : ControllerBase
             ExpiresAt = DateTime.UtcNow.Add(_tokenService.RefreshTokenLifetime),
         });
         await _db.SaveChangesAsync();
+        await lockTx.CommitAsync();
 
         SetRefreshCookie(refreshPlainText);
         var accessToken = _tokenService.CreateAccessToken(user);

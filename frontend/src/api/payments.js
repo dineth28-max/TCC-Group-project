@@ -21,6 +21,10 @@ export const getTeacherBankDetails = (teacherId) =>
 export const saveTeacherBankDetails = (teacherId, payload) =>
   apiClient.put(`/teacher-revenue/bank-details/${teacherId}`, payload).then((r) => r.data);
 
+export const getMyBankDetails = () => apiClient.get("/teacher/bank-details").then((r) => r.data);
+
+export const saveMyBankDetails = (payload) => apiClient.put("/teacher/bank-details", payload).then((r) => r.data);
+
 export const payMyInvoice = (invoiceId) => apiClient.post("/me/payments/checkout", { invoiceId }).then((r) => r.data);
 
 export const payChildInvoice = (studentId, invoiceId) =>

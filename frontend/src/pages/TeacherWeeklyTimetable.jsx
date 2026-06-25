@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import DashboardShell from "./DashboardShell";
-import { listTimetableSlots, createTimetableSlot, deleteTimetableSlot } from "../api/timetable";
+import { listTimetableSlots, deleteTimetableSlot, requestTimetableSlot, listTimetableSlotRequests } from "../api/timetable";
 import { listMyClasses } from "../api/attendance";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+const STATUS_COLORS = {
+  Pending: "bg-amber-100 text-amber-700",
+  Approved: "bg-emerald-100 text-emerald-700",
+  Rejected: "bg-red-100 text-red-700",
+};
+
 export default function TeacherWeeklyTimetable() {
   const [slots, setSlots] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [classes, setClasses] = useState([]);
   const [form, setForm] = useState({ classId: "", dayOfWeek: "Monday", startTime: "09:00", endTime: "10:00", room: "" });
   const [error, setError] = useState(null);
@@ -14,6 +21,7 @@ export default function TeacherWeeklyTimetable() {
 
   async function load() {
     setSlots(await listTimetableSlots());
+    setRequests(await listTimetableSlotRequests());
   }
 
   useEffect(() => {
@@ -30,10 +38,10 @@ export default function TeacherWeeklyTimetable() {
     setBusy(true);
     setError(null);
     try {
-      await createTimetableSlot({ ...form, classId: Number(form.classId) });
+      await requestTimetableSlot({ ...form, classId: Number(form.classId) });
       load();
     } catch (err) {
-      setError(err.response?.data?.message || "Could not create slot — check for a conflict.");
+      setError(err.response?.data?.message || "Could not submit request — check for a conflict.");
     } finally {
       setBusy(false);
     }
@@ -87,7 +95,10 @@ export default function TeacherWeeklyTimetable() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
-          <h2 className="font-semibold text-slate-800 mb-4">Add Slot</h2>
+          <h2 className="font-semibold text-slate-800 mb-1">Request a Class Schedule Slot</h2>
+          <p className="text-xs text-slate-500 mb-4">
+            Submitted requests need admin approval before they appear in the timetable above.
+          </p>
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
           {classes.length === 0 ? (
             <p className="text-slate-500 text-sm">No classes assigned to you yet.</p>
@@ -159,9 +170,32 @@ export default function TeacherWeeklyTimetable() {
                 disabled={busy}
                 className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
               >
-                Add Slot
+                Submit Request
               </button>
             </form>
+          )}
+
+          <h3 className="font-semibold text-slate-800 mt-6 mb-3">My Requests</h3>
+          {requests.length === 0 ? (
+            <p className="text-slate-500 text-xs">No requests submitted yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {requests.map((r) => (
+                <li key={r.id} className="border border-violet-100 rounded px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-slate-700">{r.subject}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || "bg-slate-100 text-slate-600"}`}>
+                      {r.status}
+                    </span>
+                  </div>
+                  <div className="text-slate-500 mt-1">
+                    {r.dayOfWeek} {r.startTime}–{r.endTime}
+                    {r.room ? ` · ${r.room}` : ""}
+                  </div>
+                  {r.reviewNote && <div className="text-slate-500 mt-1">Note: {r.reviewNote}</div>}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>

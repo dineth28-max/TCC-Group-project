@@ -71,6 +71,10 @@ public class NotificationsController : TenantScopedController
     public async Task<ActionResult<List<DeliveryLogRow>>> DeliveryLog([FromQuery] string? status, [FromQuery] string? channel)
     {
         var query = _db.NotificationQueueItems.Include(n => n.RecipientUser).AsQueryable();
+        // Unlike templates (institute-wide config, no PII), this log lists recipient names/emails —
+        // a BranchAdmin must not see another branch's staff/parent/student PII, same isolation rule
+        // every other admin list (Students, Classes, Sessions, Users) already enforces.
+        if (IsBranchScoped) query = query.Where(n => n.RecipientUser != null && n.RecipientUser.BranchId == CurrentBranchId);
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<NotificationStatus>(status, true, out var parsedStatus))
         {

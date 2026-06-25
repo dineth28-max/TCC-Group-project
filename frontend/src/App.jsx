@@ -26,6 +26,8 @@ import SettingsManagement from "./pages/SettingsManagement";
 import AdminTeacherRevenues from "./pages/AdminTeacherRevenues";
 import AdminTeacherBankDetails from "./pages/AdminTeacherBankDetails";
 import AdminTeacherRevenueTransactions from "./pages/AdminTeacherRevenueTransactions";
+import AdminScheduleRequests from "./pages/AdminScheduleRequests";
+import TeacherBankDetails from "./pages/TeacherBankDetails";
 import StudentPayments from "./pages/StudentPayments";
 import ParentPayments from "./pages/ParentPayments";
 import AdminAuditLog from "./pages/AdminAuditLog";
@@ -83,6 +85,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={["Teacher"]}>
                 <TeacherWeeklyTimetable />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/bank-details"
+            element={
+              <ProtectedRoute roles={["Teacher"]}>
+                <TeacherBankDetails />
               </ProtectedRoute>
             }
           />
@@ -228,6 +238,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={MANAGEMENT_ROLES}>
                 <AdminTeacherRevenueTransactions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/schedule-requests"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminScheduleRequests />
               </ProtectedRoute>
             }
           />

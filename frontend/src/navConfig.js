@@ -17,6 +17,7 @@ import {
   Receipt,
   CreditCard,
   ScrollText,
+  ClipboardCheck,
 } from "lucide-react";
 
 const MANAGEMENT_NAV = [
@@ -29,6 +30,7 @@ const MANAGEMENT_NAV = [
   { label: "Teachers", path: "/teachers", icon: GraduationCap },
   { label: "Branches", path: "/branches", icon: Building2 },
   { label: "Timetable", path: "/timetable", icon: CalendarClock },
+  { label: "Schedule Requests", path: "/admin/schedule-requests", icon: ClipboardCheck },
   { label: "Announcements", path: "/announcements", icon: Megaphone },
   { label: "Notifications", path: "/notifications", icon: Bell },
   { label: "Teacher Revenues", path: "/teacher-revenues", icon: TrendingUp },
@@ -48,6 +50,7 @@ const NAV_BY_ROLE = {
     { label: "Dashboard", path: "/teacher", icon: LayoutDashboard, end: true },
     { label: "Attendance QR", path: "/teacher/attendance-qr", icon: CalendarCheck },
     { label: "Weekly Timetable", path: "/teacher/timetable", icon: CalendarClock },
+    { label: "Bank Details", path: "/teacher/bank-details", icon: Landmark },
   ],
   Parent: [
     { label: "Dashboard", path: "/portal", icon: LayoutDashboard, end: true },

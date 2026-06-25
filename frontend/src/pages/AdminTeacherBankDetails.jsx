@@ -5,21 +5,41 @@ import { getTeacherBankDetails, saveTeacherBankDetails } from "../api/payments";
 
 export default function AdminTeacherBankDetails() {
   const [teachers, setTeachers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [details, setDetails] = useState(null);
   const [form, setForm] = useState({ accountHolderName: "", bankName: "", accountNumber: "" });
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
-  useEffect(() => {
-    listUsers({ role: "Teacher" }).then((data) => {
+  async function loadTeachers() {
+    setLoading(true);
+    setListError(null);
+    try {
+      const data = await listUsers(search ? { role: "Teacher", search } : { role: "Teacher" });
       setTeachers(data);
-      if (data.length > 0) setSelectedId(data[0].id);
-    });
+      if (data.length > 0 && !data.some((t) => t.id === selectedId)) setSelectedId(data[0].id);
+      if (data.length === 0) setSelectedId(null);
+    } catch {
+      setListError("Could not load teachers.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadTeachers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      setDetails(null);
+      setForm({ accountHolderName: "", bankName: "", accountNumber: "" });
+      return;
+    }
     let stale = false;
     setError(null);
     setMessage(null);
@@ -53,9 +73,26 @@ export default function AdminTeacherBankDetails() {
     <DashboardShell title="Teacher Bank Details">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-hidden">
-          <ul>
-            {teachers.length === 0 ? (
-              <li className="px-4 py-4 text-slate-500 text-xs">No teacher accounts yet.</li>
+          <div className="p-3 border-b border-violet-100 flex gap-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && loadTeachers()}
+              placeholder="Search by name or email…"
+              className="flex-1 border border-slate-300 rounded px-3 py-2 text-sm"
+            />
+            <button onClick={loadTeachers} className="bg-slate-200 hover:bg-slate-300 text-sm rounded px-3">
+              Search
+            </button>
+          </div>
+          {listError && <p className="px-4 py-2 text-red-600 text-xs">{listError}</p>}
+          <ul className="max-h-[28rem] overflow-y-auto">
+            {loading ? (
+              <li className="px-4 py-4 text-slate-500 text-xs">Loading…</li>
+            ) : teachers.length === 0 ? (
+              <li className="px-4 py-4 text-slate-500 text-xs">
+                {search ? "No teachers match that search." : "No teacher accounts yet."}
+              </li>
             ) : (
               teachers.map((t) => (
                 <li key={t.id} className="border-t border-violet-100 first:border-t-0">
@@ -71,6 +108,11 @@ export default function AdminTeacherBankDetails() {
           </ul>
         </div>
 
+        {!selectedId ? (
+          <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+            <p className="text-slate-500 text-sm">Select a teacher to view or edit their payout account.</p>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Payout Account</h2>
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -116,6 +158,7 @@ export default function AdminTeacherBankDetails() {
             Save Bank Details
           </button>
         </form>
+        )}
       </div>
     </DashboardShell>
   );

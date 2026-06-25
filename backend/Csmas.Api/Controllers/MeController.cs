@@ -108,6 +108,32 @@ public class MeController : TenantScopedController
     /// an admin would create, so the Phase 5 isolation rule (a parent only ever sees students they
     /// are linked to) applies unchanged.
     /// </summary>
+    /// <summary>Phase 17: a Student's own in-system notification inbox (e.g. ClassScheduleApproved) — mirrors PortalController's Parent-facing version, scoped to the caller's own user id.</summary>
+    [HttpGet("notifications")]
+    public async Task<ActionResult<NotificationInboxResponse>> Notifications()
+    {
+        var items = await _db.NotificationQueueItems
+            .Where(n => n.RecipientUserId == CurrentUserId && n.Channel == NotificationChannel.InSystem)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(50)
+            .Select(n => new NotificationInboxRow(n.Id, n.EventType.ToString(), n.Subject, n.Message, n.IsRead, n.CreatedAt))
+            .ToListAsync();
+
+        return Ok(new NotificationInboxResponse(items.Count(i => !i.IsRead), items));
+    }
+
+    [HttpPost("notifications/{id:int}/read")]
+    public async Task<IActionResult> MarkNotificationRead(int id)
+    {
+        var item = await _db.NotificationQueueItems
+            .FirstOrDefaultAsync(n => n.Id == id && n.RecipientUserId == CurrentUserId && n.Channel == NotificationChannel.InSystem);
+        if (item is null) return NotFound();
+
+        item.IsRead = true;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpGet("parents")]
     public async Task<ActionResult<List<ParentLinkResponse>>> MyParents()
     {

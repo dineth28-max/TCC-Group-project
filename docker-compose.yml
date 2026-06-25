@@ -48,6 +48,7 @@ services:
   #     - ./ai-service/models:/app/models
   #   ports:
   #     - "5000:5000"
+  #
 
   frontend:
     build:

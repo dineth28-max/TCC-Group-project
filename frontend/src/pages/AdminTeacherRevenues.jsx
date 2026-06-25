@@ -11,7 +11,7 @@ export default function AdminTeacherRevenues() {
 
   return (
     <DashboardShell title="Teacher Revenues">
-      <div className="grid grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <p className="text-xs text-slate-500 mb-1">Admin Commission Income</p>
           <p className="text-2xl font-semibold text-violet-700">
@@ -30,7 +30,7 @@ export default function AdminTeacherRevenues() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-violet-50 text-slate-600 text-left">
             <tr>

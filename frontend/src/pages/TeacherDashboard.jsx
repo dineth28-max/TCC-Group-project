@@ -26,7 +26,7 @@ export default function TeacherDashboard() {
 
   return (
     <DashboardShell title="Teacher Dashboard">
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-slate-800">Today's Sessions</h2>

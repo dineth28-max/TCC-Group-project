@@ -120,7 +120,7 @@ export default function FeesManagement() {
     <DashboardShell title="Fee Management">
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4">
           <p className="text-xs text-slate-500">Collection Rate ({summary?.period})</p>
           <p className="text-2xl font-semibold text-slate-800">{summary ? `${summary.collectionRatePercent}%` : "…"}</p>
@@ -145,7 +145,7 @@ export default function FeesManagement() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Fee Structures</h2>
           <form onSubmit={handleCreateStructure} className="flex gap-2 mb-4">

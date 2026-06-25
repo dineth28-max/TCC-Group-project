@@ -45,7 +45,7 @@ export default function AttendanceReports() {
     <DashboardShell title="Attendance Reports">
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Below-Threshold Students</h2>
           <div className="flex items-center gap-2 mb-4">

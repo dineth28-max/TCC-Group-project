@@ -113,8 +113,8 @@ export default function StudentRegister() {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 max-w-2xl space-y-4">
         {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">{error}</div>}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
             <label htmlFor="reg-fullname" className="block text-sm text-slate-600 mb-1">Full Name</label>
             <input
               id="reg-fullname"
@@ -199,7 +199,7 @@ export default function StudentRegister() {
             />
           </div>
 
-          <div className="col-span-2 border-t border-slate-100 pt-3">
+          <div className="sm:col-span-2 border-t border-slate-100 pt-3">
             <p className="text-sm font-medium text-slate-700 mb-1">Student Login (optional)</p>
             <p className="text-xs text-slate-500 mb-2">
               Fill both fields to create a login this student can use immediately. Leave both blank to register without a login.

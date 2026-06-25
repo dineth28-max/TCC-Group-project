@@ -48,6 +48,7 @@ builder.Services.AddSingleton<Csmas.Api.Services.SecretEncryptionService>();
 builder.Services.AddScoped<Csmas.Api.Services.PaymentWebhookService>();
 builder.Services.AddScoped<Csmas.Api.Services.PaymentService>();
 builder.Services.AddScoped<Csmas.Api.Services.AuditLogService>();
+builder.Services.AddScoped<Csmas.Api.Auth.MustChangePasswordFilter>();
 
 // ---- Notification Engine (Phase 6) ----
 builder.Services.Configure<Csmas.Api.Services.SmtpOptions>(builder.Configuration.GetSection("Smtp"));
@@ -126,7 +127,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<Csmas.Api.Auth.MustChangePasswordFilter>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

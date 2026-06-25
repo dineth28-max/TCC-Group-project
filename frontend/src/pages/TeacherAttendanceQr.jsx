@@ -136,7 +136,7 @@ export default function TeacherAttendanceQr() {
     <DashboardShell title="Attendance QR">
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Start a Session</h2>
           {classes.length === 0 ? (

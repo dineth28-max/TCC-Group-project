@@ -51,7 +51,7 @@ export default function AdminTeacherBankDetails() {
 
   return (
     <DashboardShell title="Teacher Bank Details">
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-hidden">
           <ul>
             {teachers.length === 0 ? (
@@ -71,7 +71,7 @@ export default function AdminTeacherBankDetails() {
           </ul>
         </div>
 
-        <form onSubmit={handleSubmit} className="col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Payout Account</h2>
           {error && <p className="text-red-600 text-sm">{error}</p>}
           {message && <p className="text-emerald-700 text-sm">{message}</p>}

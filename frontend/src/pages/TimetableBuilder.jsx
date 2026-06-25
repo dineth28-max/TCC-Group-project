@@ -48,8 +48,8 @@ export default function TimetableBuilder() {
   return (
     <DashboardShell title="Timetable Builder">
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-violet-50 text-slate-600 text-left">
               <tr>
@@ -134,7 +134,7 @@ export default function TimetableBuilder() {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label htmlFor="tt-start" className="block text-xs text-slate-500 mb-1">Start</label>
                 <input

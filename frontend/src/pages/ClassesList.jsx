@@ -49,8 +49,8 @@ export default function ClassesList() {
   return (
     <DashboardShell title="Classes">
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">All Classes</h2>
           {classes.length === 0 ? (
             <p className="text-slate-500 text-sm">No classes yet — create one on the right.</p>

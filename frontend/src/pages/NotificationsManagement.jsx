@@ -43,7 +43,7 @@ export default function NotificationsManagement() {
     <DashboardShell title="Notification Engine">
       {message && <p className="text-green-700 text-sm mb-3">{message}</p>}
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
           <h2 className="font-semibold text-slate-800 mb-3">Templates</h2>
           <div className="space-y-3">

@@ -2,9 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Login from "./pages/Login";
+import ChangePassword from "./pages/ChangePassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import BranchAdminDashboard from "./pages/BranchAdminDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherAttendanceQr from "./pages/TeacherAttendanceQr";
+import TeacherWeeklyTimetable from "./pages/TeacherWeeklyTimetable";
 import ParentPortal from "./pages/ParentPortal";
 import StudentView from "./pages/StudentView";
 import StudentsList from "./pages/StudentsList";
@@ -20,6 +23,14 @@ import AnnouncementsManagement from "./pages/AnnouncementsManagement";
 import NotificationsManagement from "./pages/NotificationsManagement";
 import BranchesManagement from "./pages/BranchesManagement";
 import SettingsManagement from "./pages/SettingsManagement";
+import AdminTeacherRevenues from "./pages/AdminTeacherRevenues";
+import AdminTeacherBankDetails from "./pages/AdminTeacherBankDetails";
+import AdminTeacherRevenueTransactions from "./pages/AdminTeacherRevenueTransactions";
+import AdminScheduleRequests from "./pages/AdminScheduleRequests";
+import TeacherBankDetails from "./pages/TeacherBankDetails";
+import StudentPayments from "./pages/StudentPayments";
+import ParentPayments from "./pages/ParentPayments";
+import AdminAuditLog from "./pages/AdminAuditLog";
 
 const MANAGEMENT_ROLES = ["SystemAdmin", "BranchAdmin"];
 
@@ -29,6 +40,14 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin"
             element={
@@ -50,6 +69,30 @@ export default function App() {
             element={
               <ProtectedRoute roles={["Teacher"]}>
                 <TeacherDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/attendance-qr"
+            element={
+              <ProtectedRoute roles={["Teacher"]}>
+                <TeacherAttendanceQr />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/timetable"
+            element={
+              <ProtectedRoute roles={["Teacher"]}>
+                <TeacherWeeklyTimetable />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/bank-details"
+            element={
+              <ProtectedRoute roles={["Teacher"]}>
+                <TeacherBankDetails />
               </ProtectedRoute>
             }
           />
@@ -171,6 +214,62 @@ export default function App() {
             element={
               <ProtectedRoute roles={["SystemAdmin"]}>
                 <SettingsManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher-revenues"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminTeacherRevenues />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher-bank-details"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminTeacherBankDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher-revenue-transactions"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminTeacherRevenueTransactions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/schedule-requests"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminScheduleRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-log"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminAuditLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/payments"
+            element={
+              <ProtectedRoute roles={["Student"]}>
+                <StudentPayments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/payments"
+            element={
+              <ProtectedRoute roles={["Parent"]}>
+                <ParentPayments />
               </ProtectedRoute>
             }
           />

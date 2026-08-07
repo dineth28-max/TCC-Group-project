@@ -116,8 +116,8 @@ export default function ParentPortal() {
       </div>
 
       {selectedChild && (
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
             <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-slate-800">Attendance — {selectedChild.fullName}</h2>

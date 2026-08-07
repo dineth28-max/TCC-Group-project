@@ -95,16 +95,21 @@ export default function FeesManagement() {
     }
   }
 
-  async function handlePay(invoiceId) {
-    const amount = Number(payAmounts[invoiceId]);
+  async function handlePay(invoice) {
+    const amount = Number(payAmounts[invoice.id]);
+    const remainingDue = invoice.totalDue - invoice.amountPaid;
     if (!amount || amount <= 0) {
       setError("Enter a payment amount greater than zero.");
       return;
     }
+    if (amount > remainingDue) {
+      setError(`Payment amount cannot exceed the remaining due (${remainingDue.toFixed(2)}).`);
+      return;
+    }
     setError(null);
     try {
-      await recordPayment(invoiceId, { amount, method: "Cash" });
-      setPayAmounts((prev) => ({ ...prev, [invoiceId]: "" }));
+      await recordPayment(invoice.id, { amount, method: "Cash" });
+      setPayAmounts((prev) => ({ ...prev, [invoice.id]: "" }));
       loadAll();
     } catch (err) {
       setError(err.response?.data?.message || "Payment failed.");
@@ -115,7 +120,7 @@ export default function FeesManagement() {
     <DashboardShell title="Fee Management">
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4">
           <p className="text-xs text-slate-500">Collection Rate ({summary?.period})</p>
           <p className="text-2xl font-semibold text-slate-800">{summary ? `${summary.collectionRatePercent}%` : "…"}</p>
@@ -140,7 +145,7 @@ export default function FeesManagement() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Fee Structures</h2>
           <form onSubmit={handleCreateStructure} className="flex gap-2 mb-4">
@@ -289,11 +294,14 @@ export default function FeesManagement() {
                         <input
                           type="number"
                           placeholder="Amount"
+                          min="0.01"
+                          max={i.totalDue - i.amountPaid}
+                          step="0.01"
                           value={payAmounts[i.id] || ""}
                           onChange={(e) => setPayAmounts((prev) => ({ ...prev, [i.id]: e.target.value }))}
                           className="w-20 border border-slate-300 rounded px-2 py-1 text-xs"
                         />
-                        <button onClick={() => handlePay(i.id)} className="text-xs text-violet-700 hover:underline">
+                        <button onClick={() => handlePay(i)} className="text-xs text-violet-700 hover:underline">
                           Pay
                         </button>
                       </div>

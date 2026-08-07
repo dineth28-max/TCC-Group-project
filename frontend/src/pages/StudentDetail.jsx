@@ -33,6 +33,7 @@ export default function StudentDetail() {
   const [selectedParentId, setSelectedParentId] = useState("");
   const [newParent, setNewParent] = useState({ fullName: "", email: "" });
   const [credentials, setCredentials] = useState({ loginEmail: "", loginPassword: "" });
+  const [busy, setBusy] = useState(false);
 
   async function load() {
     const data = await getStudent(id);
@@ -112,12 +113,18 @@ export default function StudentDetail() {
   }
 
   async function handleToggleStatus() {
-    if (student.status === "Active") {
-      await deactivateStudent(id);
-    } else {
-      await reactivateStudent(id);
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (student.status === "Active") {
+        await deactivateStudent(id);
+      } else {
+        await reactivateStudent(id);
+      }
+      await load();
+    } finally {
+      setBusy(false);
     }
-    load();
   }
 
   async function handleUpload(e) {
@@ -135,13 +142,25 @@ export default function StudentDetail() {
   }
 
   async function handleEnroll(classId) {
-    await enrollStudent(id, Number(classId));
-    load();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await enrollStudent(id, Number(classId));
+      await load();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleUnenroll(classId) {
-    await unenrollStudent(id, classId);
-    load();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await unenrollStudent(id, classId);
+      await load();
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (!student || !form) {
@@ -161,23 +180,23 @@ export default function StudentDetail() {
       {message && <p className="text-green-700 text-sm mb-3">{message}</p>}
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-slate-800">Profile</h2>
             <div className="flex gap-3">
               <button onClick={() => setEditing((v) => !v)} className="text-sm text-violet-700 hover:underline">
                 {editing ? "Cancel" : "Edit"}
               </button>
-              <button onClick={handleToggleStatus} className="text-sm text-slate-500 hover:text-red-600">
+              <button onClick={handleToggleStatus} disabled={busy} className="text-sm text-slate-500 hover:text-red-600 disabled:opacity-50">
                 {student.status === "Active" ? "Deactivate" : "Reactivate"}
               </button>
             </div>
           </div>
 
           {editing ? (
-            <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
+            <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
                 <label htmlFor="sd-fullname" className="block text-xs text-slate-500 mb-1">Full Name</label>
                 <input
                   id="sd-fullname"
@@ -223,14 +242,14 @@ export default function StudentDetail() {
                   className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <button type="submit" className="bg-violet-700 text-white rounded px-4 py-2 text-sm">
                   Save
                 </button>
               </div>
             </form>
           ) : (
-            <dl className="grid grid-cols-2 gap-3 text-sm">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><dt className="text-slate-500">Student Code</dt><dd className="font-mono">{student.studentCode}</dd></div>
               <div><dt className="text-slate-500">Status</dt><dd>{student.status}</dd></div>
               <div><dt className="text-slate-500">Date of Birth</dt><dd>{student.dob}</dd></div>
@@ -250,7 +269,7 @@ export default function StudentDetail() {
                 {student.classes.map((c) => (
                   <li key={c.id} className="flex items-center justify-between">
                     <span>{c.subject}</span>
-                    <button onClick={() => handleUnenroll(c.id)} className="text-xs text-slate-500 hover:text-red-600">
+                    <button onClick={() => handleUnenroll(c.id)} disabled={busy} className="text-xs text-slate-500 hover:text-red-600 disabled:opacity-50">
                       Remove
                     </button>
                   </li>
@@ -262,7 +281,8 @@ export default function StudentDetail() {
                 aria-label="Enroll in a class"
                 onChange={(e) => e.target.value && handleEnroll(e.target.value)}
                 value=""
-                className="border border-slate-300 rounded px-2 py-1 text-sm"
+                disabled={busy}
+                className="border border-slate-300 rounded px-2 py-1 text-sm disabled:opacity-50"
               >
                 <option value="">+ Enroll in a class…</option>
                 {availableClasses.map((c) => (

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import apiClient, { setAccessToken } from "../api/client";
+import apiClient, { setAccessToken, setAuthExpiredHandler } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -22,6 +22,13 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    // If the access token expires mid-session and the refresh token is also gone (expired/
+    // revoked), the response interceptor in api/client.js calls this to force the user back to
+    // a logged-out state instead of leaving them stuck behind a wall of silent 401s.
+    setAuthExpiredHandler(() => {
+      setUser(null);
+      setStatus("anonymous");
+    });
     tryRestoreSession();
   }, []);
 
@@ -44,8 +51,16 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Used after a forced password change so the mustChangePassword flag clears without a full
+  // page reload — re-fetches "who am I" and replaces the cached user object.
+  async function refreshUser() {
+    const meRes = await apiClient.get("/auth/me");
+    setUser(meRes.data);
+    return meRes.data;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, status, login, logout }}>
+    <AuthContext.Provider value={{ user, status, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

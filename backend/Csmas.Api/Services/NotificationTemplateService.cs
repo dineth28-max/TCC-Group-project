@@ -28,6 +28,9 @@ public class NotificationTemplateService
         [NotificationEventType.RiskEscalation] = (
             "{StudentName} flagged as High risk",
             "{StudentName}'s risk level moved from Medium to High. Please review their attendance history."),
+        [NotificationEventType.ClassScheduleApproved] = (
+            "{Subject} class schedule confirmed",
+            "Your {Subject} class is now scheduled for {DayOfWeek} {StartTime}-{EndTime}{RoomSuffix}."),
     };
 
     private readonly AppDbContext _db;

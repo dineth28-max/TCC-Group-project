@@ -20,6 +20,42 @@ public class BillingService
         _notifications = notifications;
     }
 
+    /// <summary>
+    /// The one place an amount gets applied to an invoice and the 4-state status machine advances —
+    /// shared by the admin "record a cash payment" endpoint and Phase 15's online payment path, so
+    /// neither duplicates the other's status-transition logic. Rejects any amount that would push
+    /// AmountPaid past TotalDue — both callers also pre-check this against the invoice they loaded,
+    /// but this is the backstop against a second concurrent request (e.g. a double-clicked "Pay")
+    /// racing in with a stale view of the same invoice.
+    /// </summary>
+    public async Task<Payment> ApplyPayment(Invoice invoice, decimal amount, string method, int recordedByUserId)
+    {
+        if (amount > invoice.TotalDue - invoice.AmountPaid)
+        {
+            throw new InvalidOperationException("Payment amount exceeds the invoice's remaining due.");
+        }
+
+        var payment = new Payment
+        {
+            InstituteId = invoice.InstituteId,
+            InvoiceId = invoice.Id,
+            Amount = amount,
+            Method = method,
+            RecordedByUserId = recordedByUserId,
+        };
+        _db.Payments.Add(payment);
+
+        invoice.AmountPaid += amount;
+        invoice.Status = invoice.AmountPaid >= invoice.TotalDue
+            ? InvoiceStatus.Paid
+            : invoice.AmountPaid > 0
+                ? InvoiceStatus.Partial
+                : invoice.Status;
+
+        await _db.SaveChangesAsync();
+        return payment;
+    }
+
     public async Task<int> GenerateInvoicesForPeriod(string period, DateOnly dueDate)
     {
         var enrollments = await _db.Enrollments.IgnoreQueryFilters()

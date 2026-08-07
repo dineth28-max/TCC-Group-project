@@ -58,7 +58,7 @@ export default function StudentsList() {
       ) : students.length === 0 ? (
         <p className="text-slate-500 text-sm">No students registered yet.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-violet-50 text-slate-600 text-left">
               <tr>

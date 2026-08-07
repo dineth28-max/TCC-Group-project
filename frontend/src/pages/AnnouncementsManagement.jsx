@@ -35,8 +35,8 @@ export default function AnnouncementsManagement() {
   return (
     <DashboardShell title="Announcements">
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           {announcements.length === 0 ? (
             <p className="text-slate-500 text-sm">No announcements posted yet.</p>
           ) : (

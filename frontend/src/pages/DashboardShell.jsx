@@ -18,6 +18,7 @@ export default function DashboardShell({ title, children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = navItemsForRole(user?.role);
@@ -27,18 +28,33 @@ export default function DashboardShell({ title, children }) {
     navigate("/login", { replace: true });
   }
 
+  function toggleSidebar() {
+    // One button serves both layouts: on mobile it opens/closes the off-canvas drawer; on
+    // desktop (where the drawer classes have no visual effect) it toggles icon-only collapse.
+    setCollapsed((v) => !v);
+    setMobileOpen((v) => !v);
+  }
+
   return (
     <div className="min-h-screen flex bg-violet-50">
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside
-        className={`bg-[#1e1333] text-violet-200 flex flex-col transition-all duration-200 ${
-          collapsed ? "w-[72px]" : "w-64"
-        }`}
+        className={`fixed md:static inset-y-0 left-0 z-30 h-full bg-[#1e1333] text-violet-200 flex flex-col transition-all duration-200 w-64 ${
+          collapsed ? "md:w-[72px]" : "md:w-64"
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10 shrink-0">
           <div className="h-9 w-9 rounded-lg bg-violet-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
             CS
           </div>
-          {!collapsed && <span className="font-semibold text-white whitespace-nowrap">CSMAS</span>}
+          {!collapsed && <span className="font-semibold text-white whitespace-nowrap md:inline">CSMAS</span>}
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
@@ -48,6 +64,7 @@ export default function DashboardShell({ title, children }) {
               to={path}
               end={end}
               title={collapsed ? label : undefined}
+              onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   isActive ? "bg-violet-600 text-white shadow-sm" : "text-violet-200 hover:bg-white/10 hover:text-white"
@@ -55,7 +72,9 @@ export default function DashboardShell({ title, children }) {
               }
             >
               <Icon size={18} className="shrink-0" />
-              {!collapsed && <span className="truncate">{label}</span>}
+              {/* Always show the label on mobile (drawer is full-width there regardless of
+                  "collapsed", which only affects the desktop icon-only rail). */}
+              <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>{label}</span>
             </NavLink>
           ))}
         </nav>
@@ -65,7 +84,7 @@ export default function DashboardShell({ title, children }) {
         <header className="h-16 bg-gradient-to-r from-violet-600 to-purple-500 flex items-center justify-between px-4 shadow-sm shrink-0">
           <div className="flex items-center gap-3 text-white min-w-0">
             <button
-              onClick={() => setCollapsed((v) => !v)}
+              onClick={toggleSidebar}
               aria-label="Toggle sidebar"
               className="p-2 rounded-md hover:bg-white/15 transition"
             >
@@ -112,7 +131,7 @@ export default function DashboardShell({ title, children }) {
           </div>
         </header>
 
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto overflow-y-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

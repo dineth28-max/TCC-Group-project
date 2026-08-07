@@ -7,4 +7,5 @@ public enum NotificationEventType
     FeeReminderT1,
     FeeOverdue,
     RiskEscalation,
+    ClassScheduleApproved,
 }

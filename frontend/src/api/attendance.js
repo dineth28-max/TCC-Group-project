@@ -9,7 +9,8 @@ export const createSession = (payload) => apiClient.post("/sessions", payload).t
 
 export const getSession = (id) => apiClient.get(`/sessions/${id}`).then((r) => r.data);
 
-export const regenerateQr = (id) => apiClient.post(`/sessions/${id}/qr/regenerate`).then((r) => r.data);
+export const regenerateQr = (id, qrDurationMinutes = 10) =>
+  apiClient.post(`/sessions/${id}/qr/regenerate`, { qrDurationMinutes }).then((r) => r.data);
 
 export const getLiveAttendance = (id) => apiClient.get(`/sessions/${id}/live`).then((r) => r.data);
 

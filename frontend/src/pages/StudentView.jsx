@@ -110,7 +110,7 @@ export default function StudentView() {
 
   return (
     <DashboardShell title="Student View">
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Attendance Check-In</h2>
 

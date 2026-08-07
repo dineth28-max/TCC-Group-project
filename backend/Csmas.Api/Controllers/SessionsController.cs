@@ -13,7 +13,7 @@ namespace Csmas.Api.Controllers;
 [Authorize]
 public class SessionsController : TenantScopedController
 {
-    private static readonly TimeSpan QrValidity = TimeSpan.FromMinutes(10);
+    private static readonly int[] AllowedQrDurationMinutes = { 5, 10, 15, 30, 60 };
 
     private readonly AppDbContext _db;
     private readonly QrCodeService _qrCodeService;
@@ -55,6 +55,11 @@ public class SessionsController : TenantScopedController
     [Authorize(Roles = "Teacher")]
     public async Task<ActionResult<SessionResponse>> Create([FromBody] CreateSessionRequest request)
     {
+        if (!AllowedQrDurationMinutes.Contains(request.QrDurationMinutes))
+        {
+            return BadRequest(new { message = $"QrDurationMinutes must be one of: {string.Join(", ", AllowedQrDurationMinutes)}." });
+        }
+
         var klass = await _db.Classes.FirstOrDefaultAsync(c => c.Id == request.ClassId);
         if (klass is null) return NotFound(new { message = "Class not found." });
         if (klass.TeacherUserId != CurrentUserId) return Forbid();
@@ -70,7 +75,7 @@ public class SessionsController : TenantScopedController
         _db.Sessions.Add(session);
         await _db.SaveChangesAsync();
 
-        IssueQr(session);
+        IssueQr(session, request.QrDurationMinutes);
         await _db.SaveChangesAsync();
 
         session.Class = klass;
@@ -88,14 +93,20 @@ public class SessionsController : TenantScopedController
 
     [HttpPost("{id:int}/qr/regenerate")]
     [Authorize(Roles = "Teacher")]
-    public async Task<ActionResult<SessionResponse>> RegenerateQr(int id)
+    public async Task<ActionResult<SessionResponse>> RegenerateQr(int id, [FromBody] RegenerateQrRequest? request)
     {
+        request ??= new RegenerateQrRequest();
+        if (!AllowedQrDurationMinutes.Contains(request.QrDurationMinutes))
+        {
+            return BadRequest(new { message = $"QrDurationMinutes must be one of: {string.Join(", ", AllowedQrDurationMinutes)}." });
+        }
+
         var session = await _db.Sessions.Include(s => s.Class).FirstOrDefaultAsync(s => s.Id == id);
         if (session is null) return NotFound();
         if (session.TeacherUserId != CurrentUserId) return Forbid();
         if (session.Status != SessionStatus.Open) return BadRequest(new { message = "Session is closed." });
 
-        IssueQr(session);
+        IssueQr(session, request.QrDurationMinutes);
         await _db.SaveChangesAsync();
         return Ok(ToResponse(session));
     }
@@ -283,9 +294,9 @@ public class SessionsController : TenantScopedController
     private bool CanView(Session session) =>
         User.IsInRole("Teacher") ? session.TeacherUserId == CurrentUserId : !IsBranchScoped || session.BranchId == CurrentBranchId;
 
-    private void IssueQr(Session session)
+    private void IssueQr(Session session, int durationMinutes)
     {
-        var expiresAt = DateTime.UtcNow.Add(QrValidity);
+        var expiresAt = DateTime.UtcNow.AddMinutes(durationMinutes);
         session.QrToken = _qrCodeService.CreateSessionQrToken(session.Id, session.InstituteId, expiresAt);
         session.QrExpiresAt = expiresAt;
     }

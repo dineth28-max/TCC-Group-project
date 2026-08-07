@@ -1,6 +1,7 @@
 using Csmas.Api.Data;
 using Csmas.Api.Domain;
 using Csmas.Api.Dtos;
+using Csmas.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,10 +19,12 @@ namespace Csmas.Api.Controllers;
 public class PortalController : TenantScopedController
 {
     private readonly AppDbContext _db;
+    private readonly PaymentService _paymentService;
 
-    public PortalController(AppDbContext db)
+    public PortalController(AppDbContext db, PaymentService paymentService)
     {
         _db = db;
+        _paymentService = paymentService;
     }
 
     private async Task<bool> IsLinked(int studentId) =>
@@ -106,6 +109,23 @@ public class PortalController : TenantScopedController
             invoices.Sum(i => i.AmountPaid),
             responses));
     }
+
+    /// <summary>Phase 15: pay an outstanding invoice for a linked child via the configured gateway.</summary>
+    [HttpPost("children/{studentId:int}/payments/checkout")]
+    public async Task<ActionResult<PaymentTransactionResponse>> Checkout(int studentId, [FromBody] CheckoutRequest request)
+    {
+        if (!await IsLinked(studentId)) return NotFound();
+
+        var invoice = await _db.Invoices.Include(i => i.Class).FirstOrDefaultAsync(i => i.Id == request.InvoiceId);
+        if (invoice is null || invoice.StudentId != studentId) return NotFound();
+
+        var (tx, checkoutUrl, error) = await _paymentService.InitiateCheckout(invoice, CurrentUserId, "/portal/payments");
+        if (tx is null) return BadRequest(new { message = error });
+        return Ok(ToTransactionResponse(tx, checkoutUrl));
+    }
+
+    private static PaymentTransactionResponse ToTransactionResponse(PaymentTransaction t, string? checkoutUrl = null) => new(
+        t.Id, t.InvoiceId, t.Amount, t.Status.ToString(), t.GatewayProvider, t.GatewayReference, t.CreatedAt, t.CompletedAt, checkoutUrl);
 
     [HttpGet("announcements")]
     public async Task<ActionResult<List<AnnouncementResponse>>> Announcements()

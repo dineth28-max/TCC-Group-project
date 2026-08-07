@@ -40,3 +40,6 @@ Thumbs.db
 # DB dumps / backups
 db/backups/
 *.sql.gz
+
+# Generated TLS cert/key (run nginx/certs/generate-cert.sh to recreate)
+nginx/certs/*.pem

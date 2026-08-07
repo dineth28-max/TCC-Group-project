@@ -45,7 +45,7 @@ export default function AttendanceReports() {
     <DashboardShell title="Attendance Reports">
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Below-Threshold Students</h2>
           <div className="flex items-center gap-2 mb-4">
@@ -53,6 +53,8 @@ export default function AttendanceReports() {
             <input
               id="attendance-threshold"
               type="number"
+              min="0"
+              max="100"
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
               className="w-20 border border-slate-300 rounded px-2 py-1 text-sm"
@@ -101,6 +103,8 @@ export default function AttendanceReports() {
             <input
               aria-label="Export year"
               type="number"
+              min="2000"
+              max="2100"
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
               className="w-24 border border-slate-300 rounded px-2 py-1 text-sm"

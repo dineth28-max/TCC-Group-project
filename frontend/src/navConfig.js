@@ -18,34 +18,85 @@ import {
   CreditCard,
   ScrollText,
   ClipboardCheck,
+  ShieldAlert,
 } from "lucide-react";
 
-const MANAGEMENT_NAV = [
-  { label: "Students", path: "/students", icon: Users },
-  { label: "Register Student", path: "/students/new", icon: UserPlus },
-  { label: "Bulk Import", path: "/students/import", icon: Upload },
-  { label: "Classes", path: "/classes", icon: BookOpen },
-  { label: "Attendance", path: "/attendance", icon: CalendarCheck },
-  { label: "Fees", path: "/fees", icon: Wallet },
-  { label: "Teachers", path: "/teachers", icon: GraduationCap },
-  { label: "Branches", path: "/branches", icon: Building2 },
-  { label: "Timetable", path: "/timetable", icon: CalendarClock },
-  { label: "Schedule Requests", path: "/admin/schedule-requests", icon: ClipboardCheck },
-  { label: "Announcements", path: "/announcements", icon: Megaphone },
-  { label: "Notifications", path: "/notifications", icon: Bell },
-  { label: "Teacher Revenues", path: "/teacher-revenues", icon: TrendingUp },
-  { label: "Teacher Bank Details", path: "/teacher-bank-details", icon: Landmark },
-  { label: "Revenue Transactions", path: "/teacher-revenue-transactions", icon: Receipt },
-  { label: "Audit Log", path: "/audit-log", icon: ScrollText },
-];
+// Each entry is either a plain link ({ label, path, icon }) or a category
+// ({ label, icon, items: [...links] }) rendered as a collapsible group in the sidebar.
+function managementGroups(includeSettings) {
+  return [
+    {
+      label: "Students",
+      icon: Users,
+      items: [
+        { label: "All Students", path: "/students", icon: Users },
+        { label: "Register Student", path: "/students/new", icon: UserPlus },
+        { label: "Bulk Import", path: "/students/import", icon: Upload },
+      ],
+    },
+    {
+      label: "Academics",
+      icon: BookOpen,
+      items: [
+        { label: "Classes", path: "/classes", icon: BookOpen },
+        { label: "Timetable", path: "/timetable", icon: CalendarClock },
+        { label: "Schedule Requests", path: "/admin/schedule-requests", icon: ClipboardCheck },
+      ],
+    },
+    {
+      label: "Attendance & Risk",
+      icon: CalendarCheck,
+      items: [
+        { label: "Attendance Reports", path: "/attendance", icon: CalendarCheck },
+        { label: "High-Risk Students", path: "/risk-students", icon: ShieldAlert },
+      ],
+    },
+    {
+      label: "Finance",
+      icon: Wallet,
+      items: [
+        { label: "Fees", path: "/fees", icon: Wallet },
+        { label: "Teacher Revenues", path: "/teacher-revenues", icon: TrendingUp },
+        { label: "Teacher Bank Details", path: "/teacher-bank-details", icon: Landmark },
+        { label: "Revenue Transactions", path: "/teacher-revenue-transactions", icon: Receipt },
+      ],
+    },
+    {
+      label: "People",
+      icon: GraduationCap,
+      items: [
+        { label: "Teachers", path: "/teachers", icon: GraduationCap },
+        { label: "Branches", path: "/branches", icon: Building2 },
+      ],
+    },
+    {
+      label: "Communication",
+      icon: Megaphone,
+      items: [
+        { label: "Announcements", path: "/announcements", icon: Megaphone },
+        { label: "Notifications", path: "/notifications", icon: Bell },
+      ],
+    },
+    {
+      label: "System",
+      icon: ScrollText,
+      items: [
+        { label: "Audit Log", path: "/audit-log", icon: ScrollText },
+        ...(includeSettings ? [{ label: "Settings", path: "/settings", icon: Settings }] : []),
+      ],
+    },
+  ];
+}
 
 const NAV_BY_ROLE = {
   SystemAdmin: [
     { label: "Dashboard", path: "/admin", icon: LayoutDashboard, end: true },
-    ...MANAGEMENT_NAV,
-    { label: "Settings", path: "/settings", icon: Settings },
+    ...managementGroups(true),
   ],
-  BranchAdmin: [{ label: "Dashboard", path: "/branch", icon: LayoutDashboard, end: true }, ...MANAGEMENT_NAV],
+  BranchAdmin: [
+    { label: "Dashboard", path: "/branch", icon: LayoutDashboard, end: true },
+    ...managementGroups(false),
+  ],
   Teacher: [
     { label: "Dashboard", path: "/teacher", icon: LayoutDashboard, end: true },
     { label: "Attendance QR", path: "/teacher/attendance-qr", icon: CalendarCheck },

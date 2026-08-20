@@ -31,6 +31,7 @@ import TeacherBankDetails from "./pages/TeacherBankDetails";
 import StudentPayments from "./pages/StudentPayments";
 import ParentPayments from "./pages/ParentPayments";
 import AdminAuditLog from "./pages/AdminAuditLog";
+import HighRiskStudents from "./pages/HighRiskStudents";
 
 const MANAGEMENT_ROLES = ["SystemAdmin", "BranchAdmin"];
 
@@ -246,6 +247,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={MANAGEMENT_ROLES}>
                 <AdminScheduleRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-students"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <HighRiskStudents />
               </ProtectedRoute>
             }
           />

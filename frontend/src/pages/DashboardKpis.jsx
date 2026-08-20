@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Users, CalendarCheck, Wallet, ShieldAlert } from "lucide-react";
 import { getKpis, exportStudents } from "../api/students";
@@ -79,7 +80,10 @@ export default function DashboardKpis({ scopeLabel }) {
           from="from-indigo-600"
           to="to-violet-500"
         />
-        <div className="rounded-xl p-4 bg-white border border-violet-100 shadow-sm flex flex-col justify-between min-h-[110px]">
+        <Link
+          to="/risk-students"
+          className="rounded-xl p-4 bg-white border border-violet-100 shadow-sm flex flex-col justify-between min-h-[110px] hover:border-violet-300 transition-colors"
+        >
           <div className="flex items-start justify-between">
             <p className="text-sm font-medium text-slate-500">High-Risk Students</p>
             <span className="h-9 w-9 rounded-full bg-violet-50 text-violet-400 flex items-center justify-center">
@@ -88,11 +92,11 @@ export default function DashboardKpis({ scopeLabel }) {
           </div>
           <div>
             <p className="text-3xl font-semibold leading-tight text-slate-500">
-              {kpis && kpis.riskEngineEnabled ? kpis.riskFlagCount : "—"}
+              {kpis && kpis.riskEngineEnabled ? kpis.riskFlagCount : "…"}
             </p>
-            {kpis && !kpis.riskEngineEnabled && <p className="text-xs text-slate-600 mt-0.5">AI Risk Engine arrives in Phase 8</p>}
+            <p className="text-xs text-slate-600 mt-0.5">Flagged High risk, click to view</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-violet-100 p-5 mb-6">

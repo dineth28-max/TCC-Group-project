@@ -18,12 +18,30 @@ public class SessionsController : TenantScopedController
     private readonly AppDbContext _db;
     private readonly QrCodeService _qrCodeService;
     private readonly NotificationQueueService _notifications;
+    private readonly RiskScoringService _riskScoring;
+    private readonly ILogger<SessionsController> _logger;
 
-    public SessionsController(AppDbContext db, QrCodeService qrCodeService, NotificationQueueService notifications)
+    public SessionsController(
+        AppDbContext db, QrCodeService qrCodeService, NotificationQueueService notifications,
+        RiskScoringService riskScoring, ILogger<SessionsController> logger)
     {
         _db = db;
         _qrCodeService = qrCodeService;
         _notifications = notifications;
+        _riskScoring = riskScoring;
+        _logger = logger;
+    }
+
+    private async Task SafeRecomputeRisk(int studentId)
+    {
+        try
+        {
+            await _riskScoring.RecomputeForStudent(studentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Risk recompute failed for student {StudentId}.", studentId);
+        }
     }
 
     [HttpGet("my-classes")]
@@ -222,6 +240,7 @@ public class SessionsController : TenantScopedController
         }
 
         await _db.SaveChangesAsync();
+        await SafeRecomputeRisk(studentId);
         return NoContent();
     }
 
@@ -262,6 +281,12 @@ public class SessionsController : TenantScopedController
         session.Status = SessionStatus.Closed;
         session.ClosedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+
+        foreach (var studentId in enrolledStudentIds.Except(alreadyMarked))
+        {
+            await SafeRecomputeRisk(studentId);
+        }
+
         return NoContent();
     }
 

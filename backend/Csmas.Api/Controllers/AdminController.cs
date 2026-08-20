@@ -50,8 +50,9 @@ public class AdminController : TenantScopedController
         var attendanceRate = await ComputeAttendanceRate(DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-30), DateOnly.FromDateTime(DateTime.UtcNow));
         var feeRate = await ComputeFeeCollectionRate();
         var trend = await ComputeAttendanceTrend(14);
+        var riskFlagCount = await ComputeRiskFlagCount();
 
-        var response = new KpisResponse(totalStudents, attendanceRate, feeRate, 0, false, trend);
+        var response = new KpisResponse(totalStudents, attendanceRate, feeRate, riskFlagCount, true, trend);
         _cache.Set(cacheKey, response, CacheTtl);
         return Ok(response);
     }
@@ -80,6 +81,13 @@ public class AdminController : TenantScopedController
         var totalInvoiced = invoices.Sum(i => i.TotalDue);
         var totalCollected = invoices.Sum(i => i.AmountPaid);
         return totalInvoiced == 0 ? 0 : Math.Round(100m * totalCollected / totalInvoiced, 1);
+    }
+
+    private async Task<int> ComputeRiskFlagCount()
+    {
+        var query = _db.RiskScores.Where(r => r.Level == RiskLevel.High);
+        if (IsBranchScoped) query = query.Where(r => r.Student!.BranchId == CurrentBranchId);
+        return await query.CountAsync();
     }
 
     private async Task<List<AttendanceTrendPoint>> ComputeAttendanceTrend(int days)

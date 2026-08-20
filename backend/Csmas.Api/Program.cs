@@ -59,6 +59,19 @@ builder.Services.AddHostedService<Csmas.Api.Services.NotificationDeliveryBackgro
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<Csmas.Api.Services.KpiCacheService>();
 
+// ---- AI Student Risk Engine (Phase 8): AiRiskClient calls the ai-service Flask app's existing
+// pre-trained model over the internal Docker network — that model is never retrained/modified by
+// the backend, only queried. Short timeout so a slow/down AI service degrades gracefully instead
+// of blocking the attendance/payment action that triggered a recompute (plan.md §9/§11). ----
+builder.Services.AddHttpClient<Csmas.Api.Services.AiRiskClient>(client =>
+{
+    var aiServiceBaseUrl = builder.Configuration["AiService:BaseUrl"] ?? "http://ai-service:5001";
+    client.BaseAddress = new Uri(aiServiceBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddScoped<Csmas.Api.Services.RiskFeatureBuilder>();
+builder.Services.AddScoped<Csmas.Api.Services.RiskScoringService>();
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

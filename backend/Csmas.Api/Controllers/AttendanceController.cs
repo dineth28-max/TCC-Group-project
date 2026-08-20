@@ -19,11 +19,15 @@ public class AttendanceController : TenantScopedController
 {
     private readonly AppDbContext _db;
     private readonly QrCodeService _qrCodeService;
+    private readonly RiskScoringService _riskScoring;
+    private readonly ILogger<AttendanceController> _logger;
 
-    public AttendanceController(AppDbContext db, QrCodeService qrCodeService)
+    public AttendanceController(AppDbContext db, QrCodeService qrCodeService, RiskScoringService riskScoring, ILogger<AttendanceController> logger)
     {
         _db = db;
         _qrCodeService = qrCodeService;
+        _riskScoring = riskScoring;
+        _logger = logger;
     }
 
     [HttpPost("check-in")]
@@ -93,6 +97,15 @@ public class AttendanceController : TenantScopedController
             // either committed — the unique (SessionId, StudentId) index caught the race. Surface
             // it as the same friendly message instead of a raw 500.
             return BadRequest(new { message = "You have already checked in to this session." });
+        }
+
+        try
+        {
+            await _riskScoring.RecomputeForStudent(student.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Risk recompute failed for student {StudentId} after check-in.", student.Id);
         }
 
         return Ok(new CheckInResponse(status.ToString(), distance));

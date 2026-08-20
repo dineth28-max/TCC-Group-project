@@ -13,11 +13,15 @@ public class BillingService
 {
     private readonly AppDbContext _db;
     private readonly NotificationQueueService _notifications;
+    private readonly RiskScoringService _riskScoring;
+    private readonly ILogger<BillingService> _logger;
 
-    public BillingService(AppDbContext db, NotificationQueueService notifications)
+    public BillingService(AppDbContext db, NotificationQueueService notifications, RiskScoringService riskScoring, ILogger<BillingService> logger)
     {
         _db = db;
         _notifications = notifications;
+        _riskScoring = riskScoring;
+        _logger = logger;
     }
 
     /// <summary>
@@ -53,6 +57,16 @@ public class BillingService
                 : invoice.Status;
 
         await _db.SaveChangesAsync();
+
+        try
+        {
+            await _riskScoring.RecomputeForStudent(invoice.StudentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Risk recompute failed for student {StudentId} after payment.", invoice.StudentId);
+        }
+
         return payment;
     }
 

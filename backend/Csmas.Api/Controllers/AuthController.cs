@@ -88,6 +88,9 @@ public class AuthController : ControllerBase
             TokenHash = TokenService.Hash(refreshPlainText),
             ExpiresAt = DateTime.UtcNow.Add(_tokenService.RefreshTokenLifetime),
         });
+        // Feeds F7's "parent portal login frequency" risk feature (RiskFeatureBuilder) — logged for
+        // every role uniformly since only the Parent-role rows actually get queried there.
+        _db.UserLoginEvents.Add(new UserLoginEvent { InstituteId = user.InstituteId, UserId = user.Id });
         await _db.SaveChangesAsync();
         await lockTx.CommitAsync();
 

@@ -40,6 +40,8 @@ public class AppDbContext : DbContext
     public DbSet<TeacherBankDetail> TeacherBankDetails => Set<TeacherBankDetail>();
     public DbSet<InstituteBankDetail> InstituteBankDetails => Set<InstituteBankDetail>();
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
+    public DbSet<RiskScore> RiskScores => Set<RiskScore>();
+    public DbSet<UserLoginEvent> UserLoginEvents => Set<UserLoginEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -283,6 +285,25 @@ public class AppDbContext : DbContext
             e.HasIndex(a => new { a.InstituteId, a.CreatedAt });
             e.HasOne(a => a.ActorUser).WithMany().OnDelete(DeleteBehavior.Restrict);
             e.HasQueryFilter(a => _tenantProvider.BypassTenantFilter || a.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<RiskScore>(e =>
+        {
+            e.Property(r => r.Level).HasConversion<string>().HasMaxLength(10);
+            e.Property(r => r.PreviousLevel).HasConversion<string>().HasMaxLength(10);
+            e.HasIndex(r => r.StudentId).IsUnique();
+            e.HasIndex(r => r.InstituteId);
+            // Same Restrict invariant as Attendance/Invoice — risk history must outlive a
+            // hard-deleted Student, not silently vanish with it.
+            e.HasOne(r => r.Student).WithMany().OnDelete(DeleteBehavior.Restrict);
+            e.HasQueryFilter(r => _tenantProvider.BypassTenantFilter || r.InstituteId == _tenantProvider.InstituteId);
+        });
+
+        modelBuilder.Entity<UserLoginEvent>(e =>
+        {
+            e.HasIndex(l => new { l.UserId, l.LoggedInAt });
+            e.HasIndex(l => l.InstituteId);
+            e.HasQueryFilter(l => _tenantProvider.BypassTenantFilter || l.InstituteId == _tenantProvider.InstituteId);
         });
 
         base.OnModelCreating(modelBuilder);

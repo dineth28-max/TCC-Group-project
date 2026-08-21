@@ -2,36 +2,38 @@ using System.Text.Json.Serialization;
 
 namespace Csmas.Api.Dtos;
 
-/// <summary>
-/// Body posted to the AI service's existing /predict route. Field names/casing must match
-/// ai-service/app.py's FEATURES list exactly — that Flask app and its trained rf_model.pkl/
-/// scaler.pkl are treated as a fixed external contract here, never modified by the backend.
-/// </summary>
 public class AiPredictRequest
 {
     [JsonPropertyName("student_id")]
     public int StudentId { get; set; }
 
+    /// <summary>Fraction of sessions attended (Present or Late) out of total sessions held.</summary>
     [JsonPropertyName("attendance_rate")]
     public double AttendanceRate { get; set; }
 
-    [JsonPropertyName("avg_grade")]
-    public double AvgGrade { get; set; }
+    /// <summary>Fraction of sessions where the student checked in after the grace period.</summary>
+    [JsonPropertyName("late_rate")]
+    public double LateRate { get; set; }
 
-    [JsonPropertyName("assignments_submitted")]
-    public int AssignmentsSubmitted { get; set; }
-
-    [JsonPropertyName("failed_modules")]
-    public int FailedModules { get; set; }
-
+    /// <summary>1 if the student has any overdue invoice, 0 otherwise.</summary>
     [JsonPropertyName("financial_issues")]
     public int FinancialIssues { get; set; }
 
+    /// <summary>Total number of invoices currently in Overdue status.</summary>
+    [JsonPropertyName("overdue_invoice_count")]
+    public int OverdueInvoiceCount { get; set; }
+
+    /// <summary>Derived score 1–10 from attendance rate and parent portal login frequency.</summary>
     [JsonPropertyName("engagement_score")]
     public double EngagementScore { get; set; }
 
+    /// <summary>Semester number derived from months since first enrolment (each 6 months = 1 semester).</summary>
     [JsonPropertyName("semester")]
     public int Semester { get; set; }
+
+    /// <summary>Number of classes the student is currently enrolled in.</summary>
+    [JsonPropertyName("classes_enrolled")]
+    public int ClassesEnrolled { get; set; }
 }
 
 public class AiPredictResponse

@@ -5,26 +5,26 @@ import os
 
 app = Flask(__name__)
 
-MODEL_PATH = "model/rf_model.pkl"
+MODEL_PATH  = "model/rf_model.pkl"
 SCALER_PATH = "model/scaler.pkl"
 
+# Must match train.py FEATURES exactly — order matters for the scaler
 FEATURES = [
     "attendance_rate",
-    "avg_grade",
-    "assignments_submitted",
-    "failed_modules",
+    "late_rate",
     "financial_issues",
+    "overdue_invoice_count",
     "engagement_score",
-    "semester"
+    "semester",
+    "classes_enrolled",
 ]
 
-# Load model and scaler at startup
 try:
-    model = joblib.load(MODEL_PATH)
+    model  = joblib.load(MODEL_PATH)
     scaler = joblib.load(SCALER_PATH)
     print("Model and scaler loaded successfully.")
 except FileNotFoundError:
-    model = None
+    model  = None
     scaler = None
     print("WARNING: Model not found. Run train.py first.")
 
@@ -44,7 +44,6 @@ def predict():
     if not data:
         return jsonify({"error": "No JSON body provided."}), 400
 
-    # Validate required fields
     missing = [f for f in FEATURES if f not in data]
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
@@ -53,17 +52,16 @@ def predict():
         input_vector = np.array([[data[f] for f in FEATURES]])
         input_scaled = scaler.transform(input_vector)
 
-        prediction = model.predict(input_scaled)[0]
+        prediction  = model.predict(input_scaled)[0]
         probability = model.predict_proba(input_scaled)[0][1]
-
-        risk_level = "HIGH" if prediction == 1 else "LOW"
+        risk_level  = "HIGH" if prediction == 1 else "LOW"
 
         return jsonify({
-            "student_id": data.get("student_id", "unknown"),
-            "dropout_risk": int(prediction),
-            "risk_level": risk_level,
+            "student_id":       data.get("student_id", "unknown"),
+            "dropout_risk":     int(prediction),
+            "risk_level":       risk_level,
             "risk_probability": round(float(probability), 4),
-            "features_used": FEATURES
+            "features_used":    FEATURES
         }), 200
 
     except Exception as e:
@@ -92,13 +90,13 @@ def predict_batch():
         try:
             input_vector = np.array([[student[f] for f in FEATURES]])
             input_scaled = scaler.transform(input_vector)
-            prediction = model.predict(input_scaled)[0]
-            probability = model.predict_proba(input_scaled)[0][1]
+            prediction   = model.predict(input_scaled)[0]
+            probability  = model.predict_proba(input_scaled)[0][1]
 
             results.append({
-                "student_id": student.get("student_id", "unknown"),
-                "dropout_risk": int(prediction),
-                "risk_level": "HIGH" if prediction == 1 else "LOW",
+                "student_id":       student.get("student_id", "unknown"),
+                "dropout_risk":     int(prediction),
+                "risk_level":       "HIGH" if prediction == 1 else "LOW",
                 "risk_probability": round(float(probability), 4)
             })
         except Exception as e:

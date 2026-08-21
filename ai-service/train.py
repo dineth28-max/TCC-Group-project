@@ -10,25 +10,21 @@ from sklearn.preprocessing import StandardScaler
 
 FEATURES = [
     "attendance_rate",
-    "avg_grade",
-    "assignments_submitted",
-    "failed_modules",
+    "late_rate",
     "financial_issues",
+    "overdue_invoice_count",
     "engagement_score",
-    "semester"
+    "semester",
+    "classes_enrolled",
 ]
 TARGET = "dropout_risk"
 MODEL_DIR = "model"
 
 def train():
-    # Generate or load data
-    if os.path.exists("student_data.csv"):
-        df = pd.read_csv("student_data.csv")
-        print("Loaded existing dataset.")
-    else:
-        df = generate_student_data(1000)
-        df.to_csv("student_data.csv", index=False)
-        print("Generated new dataset.")
+    # Always regenerate — old CSV has different columns
+    df = generate_student_data(1000)
+    df.to_csv("student_data.csv", index=False)
+    print(f"Dataset generated: {len(df)} records")
 
     X = df[FEATURES]
     y = df[TARGET]
@@ -37,12 +33,10 @@ def train():
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # Scale features
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    X_test_scaled  = scaler.transform(X_test)
 
-    # Train Random Forest
     model = RandomForestClassifier(
         n_estimators=200,
         max_depth=10,
@@ -52,7 +46,6 @@ def train():
     )
     model.fit(X_train_scaled, y_train)
 
-    # Evaluate
     y_pred = model.predict(X_test_scaled)
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
 
@@ -62,9 +55,13 @@ def train():
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred, target_names=["Low Risk", "High Risk"]))
 
-    # Save model and scaler
+    importances = model.feature_importances_
+    print("\nFeature Importances:")
+    for feat, imp in sorted(zip(FEATURES, importances), key=lambda x: -x[1]):
+        print(f"  {feat:<25} {imp:.4f}")
+
     os.makedirs(MODEL_DIR, exist_ok=True)
-    joblib.dump(model, os.path.join(MODEL_DIR, "rf_model.pkl"))
+    joblib.dump(model,  os.path.join(MODEL_DIR, "rf_model.pkl"))
     joblib.dump(scaler, os.path.join(MODEL_DIR, "scaler.pkl"))
     print(f"\nModel and scaler saved to ./{MODEL_DIR}/")
 

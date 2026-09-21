@@ -55,9 +55,9 @@ export default function TeacherWeeklyTimetable() {
   return (
     <DashboardShell title="Weekly Timetable">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-violet-50 text-slate-600 text-left">
+            <thead className="bg-emerald-50 text-slate-600 text-left">
               <tr>
                 <th className="px-4 py-2">Day</th>
                 <th className="px-4 py-2">Time</th>
@@ -77,7 +77,7 @@ export default function TeacherWeeklyTimetable() {
                 slots
                   .sort((a, b) => DAYS.indexOf(a.dayOfWeek) - DAYS.indexOf(b.dayOfWeek) || a.startTime.localeCompare(b.startTime))
                   .map((s) => (
-                    <tr key={s.id} className="border-t border-violet-100">
+                    <tr key={s.id} className="border-t border-emerald-100">
                       <td className="px-4 py-2">{s.dayOfWeek}</td>
                       <td className="px-4 py-2 font-mono text-xs">{s.startTime}–{s.endTime}</td>
                       <td className="px-4 py-2">{s.subject}</td>
@@ -94,7 +94,7 @@ export default function TeacherWeeklyTimetable() {
           </table>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-1">Request a Class Schedule Slot</h2>
           <p className="text-xs text-slate-500 mb-4">
             Submitted requests need admin approval before they appear in the timetable above.
@@ -168,7 +168,7 @@ export default function TeacherWeeklyTimetable() {
               <button
                 type="submit"
                 disabled={busy}
-                className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
+                className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
               >
                 Submit Request
               </button>
@@ -181,7 +181,7 @@ export default function TeacherWeeklyTimetable() {
           ) : (
             <ul className="space-y-2">
               {requests.map((r) => (
-                <li key={r.id} className="border border-violet-100 rounded px-3 py-2 text-xs">
+                <li key={r.id} className="border border-emerald-100 rounded px-3 py-2 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-slate-700">{r.subject}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] || "bg-slate-100 text-slate-600"}`}>

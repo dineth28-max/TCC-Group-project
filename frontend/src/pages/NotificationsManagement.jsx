@@ -44,7 +44,7 @@ export default function NotificationsManagement() {
       {message && <p className="text-green-700 text-sm mb-3">{message}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
           <h2 className="font-semibold text-slate-800 mb-3">Templates</h2>
           <div className="space-y-3">
             {templates.map((t) => (
@@ -52,8 +52,8 @@ export default function NotificationsManagement() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-slate-700">{t.eventType}</span>
                   <div className="flex items-center gap-2">
-                    {t.isCustomized && <span className="text-[10px] bg-violet-50 text-violet-700 rounded px-1.5 py-0.5">Customized</span>}
-                    <button onClick={() => startEdit(t)} className="text-xs text-violet-700 hover:underline">
+                    {t.isCustomized && <span className="text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5">Customized</span>}
+                    <button onClick={() => startEdit(t)} className="text-xs text-emerald-700 hover:underline">
                       {editing === t.eventType ? "Cancel" : "Edit"}
                     </button>
                   </div>
@@ -73,7 +73,7 @@ export default function NotificationsManagement() {
                       rows={3}
                       placeholder="Body — use {StudentName}, {Subject}, {TotalDue}, {DueDate}, etc."
                     />
-                    <button onClick={() => handleSave(t.eventType)} className="bg-violet-700 text-white rounded px-3 py-1 text-xs">
+                    <button onClick={() => handleSave(t.eventType)} className="bg-emerald-700 text-white rounded px-3 py-1 text-xs">
                       Save
                     </button>
                   </div>
@@ -88,16 +88,16 @@ export default function NotificationsManagement() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-slate-800">Delivery Log</h3>
-            <button onClick={loadLog} className="text-xs text-violet-700 hover:underline">
+            <button onClick={loadLog} className="text-xs text-emerald-700 hover:underline">
               Refresh
             </button>
           </div>
           <div className="overflow-y-auto max-h-[480px]" tabIndex={0} role="region" aria-label="Delivery log table">
             <table className="w-full text-xs">
-              <thead className="bg-violet-50 text-slate-600 text-left sticky top-0">
+              <thead className="bg-emerald-50 text-slate-600 text-left sticky top-0">
                 <tr>
                   <th className="px-2 py-1.5">When</th>
                   <th className="px-2 py-1.5">Event</th>

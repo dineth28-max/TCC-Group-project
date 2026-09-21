@@ -75,7 +75,7 @@ export default function StudentRegister() {
   if (created) {
     return (
       <DashboardShell title="Student Registered">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 max-w-md text-center space-y-4">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 max-w-md text-center space-y-4">
           <p className="text-green-700 font-medium">{created.fullName} registered successfully.</p>
           <p className="text-sm text-slate-500">
             Student ID: <span className="font-mono">{created.studentCode}</span>
@@ -87,12 +87,12 @@ export default function StudentRegister() {
             Print or hand this QR code to the student now — it's their identity QR for attendance check-in.
           </p>
           {created.loginEmail && (
-            <p className="text-xs text-violet-700">
+            <p className="text-xs text-emerald-700">
               Login created: <span className="font-mono">{created.loginEmail}</span> — share the password you just set with the student.
             </p>
           )}
           <div className="flex gap-2 justify-center">
-            <Link to={`/students/${created.id}`} className="text-violet-700 text-sm hover:underline">
+            <Link to={`/students/${created.id}`} className="text-emerald-700 text-sm hover:underline">
               View profile
             </Link>
             <button
@@ -110,7 +110,7 @@ export default function StudentRegister() {
   return (
     <DashboardShell title="Register Student">
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 max-w-2xl space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 max-w-2xl space-y-4">
         {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">{error}</div>}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -243,7 +243,7 @@ export default function StudentRegister() {
                   key={c.id}
                   className={`px-3 py-1.5 rounded border text-sm cursor-pointer ${
                     form.classIds.includes(c.id)
-                      ? "bg-violet-50 border-violet-400 text-violet-700"
+                      ? "bg-emerald-50 border-emerald-400 text-emerald-700"
                       : "border-slate-300 text-slate-600"
                   }`}
                 >
@@ -263,7 +263,7 @@ export default function StudentRegister() {
         <button
           type="submit"
           disabled={submitting}
-          className="bg-violet-700 hover:bg-violet-800 disabled:opacity-60 text-white rounded px-5 py-2 text-sm font-medium"
+          className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white rounded px-5 py-2 text-sm font-medium"
         >
           {submitting ? "Registering…" : "Register Student"}
         </button>

@@ -122,7 +122,7 @@ export default function HighRiskStudents() {
 
   return (
     <DashboardShell title="High-Risk Students">
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4 mb-6">
         <h3 className="font-semibold text-slate-800 mb-2 text-sm">Look up a student and run a prediction now</h3>
         <div className="flex gap-2 mb-3">
           <input
@@ -135,7 +135,7 @@ export default function HighRiskStudents() {
           <button
             onClick={handleLookup}
             disabled={lookupLoading}
-            className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm rounded px-4"
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm rounded px-4"
           >
             {lookupLoading ? "Searching…" : "Search"}
           </button>
@@ -154,7 +154,7 @@ export default function HighRiskStudents() {
                 <button
                   onClick={() => handlePredict(s.id)}
                   disabled={predictingId === s.id}
-                  className="bg-violet-50 text-violet-700 border border-violet-200 rounded px-3 py-1 text-xs hover:bg-violet-100 disabled:opacity-50"
+                  className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded px-3 py-1 text-xs hover:bg-emerald-100 disabled:opacity-50"
                 >
                   {predictingId === s.id ? "Predicting…" : "Run Prediction"}
                 </button>
@@ -164,7 +164,7 @@ export default function HighRiskStudents() {
         )}
 
         {predictionResult && (
-          <div className="border border-violet-200 bg-violet-50/50 rounded p-3 text-sm">
+          <div className="border border-emerald-200 bg-emerald-50/50 rounded p-3 text-sm">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{predictionResult.fullName}</span>
               <span className={`px-2 py-0.5 rounded text-xs ${LEVEL_STYLES[predictionResult.riskLevel] || "bg-slate-200 text-slate-600"}`}>
@@ -219,7 +219,7 @@ export default function HighRiskStudents() {
           onClick={handlePredictClass}
           disabled={!classId || classPredicting}
           title={!classId ? "Select a class first" : undefined}
-          className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded px-4 py-2"
+          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded px-4 py-2"
         >
           {classPredicting ? "Predicting class…" : "Predict Entire Class"}
         </button>
@@ -243,9 +243,9 @@ export default function HighRiskStudents() {
       ) : students.length === 0 ? (
         <p className="text-slate-500 text-sm">No scored students yet — scores appear as attendance and payment events happen.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-violet-50 text-slate-600 text-left">
+            <thead className="bg-emerald-50 text-slate-600 text-left">
               <tr>
                 <th className="px-4 py-2">Student Code</th>
                 <th className="px-4 py-2">Name</th>
@@ -261,7 +261,7 @@ export default function HighRiskStudents() {
                 <tr key={s.studentId} className="border-t border-slate-100 align-top">
                   <td className="px-4 py-2 font-mono text-xs">{s.studentCode}</td>
                   <td className="px-4 py-2">
-                    <Link to={`/students/${s.studentId}`} className="text-violet-700 hover:underline">
+                    <Link to={`/students/${s.studentId}`} className="text-emerald-700 hover:underline">
                       {s.fullName}
                     </Link>
                   </td>

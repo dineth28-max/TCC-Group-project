@@ -36,7 +36,7 @@ export default function AnnouncementsManagement() {
     <DashboardShell title="Announcements">
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           {announcements.length === 0 ? (
             <p className="text-slate-500 text-sm">No announcements posted yet.</p>
           ) : (
@@ -61,7 +61,7 @@ export default function AnnouncementsManagement() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Post Announcement</h2>
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
           <form onSubmit={handleCreate} className="space-y-3">
@@ -86,7 +86,7 @@ export default function AnnouncementsManagement() {
                 className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
               />
             </div>
-            <button type="submit" className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full">
+            <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full">
               Post
             </button>
           </form>

@@ -96,7 +96,7 @@ export default function TeachersManagement() {
               setTemporaryPassword(null);
             }}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-              role === r ? "bg-violet-700 text-white shadow-sm" : "bg-white text-slate-600 border border-violet-100 hover:bg-violet-100"
+              role === r ? "bg-emerald-700 text-white shadow-sm" : "bg-white text-slate-600 border border-emerald-100 hover:bg-emerald-100"
             }`}
           >
             {r} Accounts
@@ -118,9 +118,9 @@ export default function TeachersManagement() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-violet-50 text-slate-600 text-left">
+            <thead className="bg-emerald-50 text-slate-600 text-left">
               <tr>
                 <th className="px-4 py-2">Name</th>
                 <th className="px-4 py-2">Email</th>
@@ -140,7 +140,7 @@ export default function TeachersManagement() {
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} className="border-t border-violet-100">
+                  <tr key={u.id} className="border-t border-emerald-100">
                     <td className="px-4 py-2">
                       {u.fullName}
                       {u.mustChangePassword && (
@@ -161,7 +161,7 @@ export default function TeachersManagement() {
                       </span>
                     </td>
                     <td className="px-4 py-2 text-right space-x-2 whitespace-nowrap">
-                      <button onClick={() => handleReset(u)} className="text-xs text-violet-700 hover:underline">
+                      <button onClick={() => handleReset(u)} className="text-xs text-emerald-700 hover:underline">
                         Reset password
                       </button>
                       <button onClick={() => handleToggleStatus(u)} className="text-xs text-slate-500 hover:text-red-600">
@@ -175,7 +175,7 @@ export default function TeachersManagement() {
           </table>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">New {role} Account</h2>
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
           <form onSubmit={handleCreate} className="space-y-3">
@@ -284,7 +284,7 @@ export default function TeachersManagement() {
                 </div>
               </>
             )}
-            <button type="submit" disabled={busy} className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50">
+            <button type="submit" disabled={busy} className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50">
               Create Account
             </button>
           </form>

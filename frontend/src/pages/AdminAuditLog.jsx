@@ -15,9 +15,9 @@ export default function AdminAuditLog() {
         Who changed Payment Account, Revenue Split, Institute/Teacher Bank Details, or reset a password —
         and when.
       </p>
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-violet-50 text-slate-600 text-left">
+          <thead className="bg-emerald-50 text-slate-600 text-left">
             <tr>
               <th className="px-4 py-2">Date</th>
               <th className="px-4 py-2">Actor</th>
@@ -34,7 +34,7 @@ export default function AdminAuditLog() {
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.id} className="border-t border-violet-100">
+                <tr key={r.id} className="border-t border-emerald-100">
                   <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</td>
                   <td className="px-4 py-2">{r.actorName}</td>
                   <td className="px-4 py-2 text-xs font-mono">{r.action}</td>

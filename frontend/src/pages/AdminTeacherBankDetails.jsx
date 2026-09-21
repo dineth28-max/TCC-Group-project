@@ -72,8 +72,8 @@ export default function AdminTeacherBankDetails() {
   return (
     <DashboardShell title="Teacher Bank Details">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-hidden">
-          <div className="p-3 border-b border-violet-100 flex gap-2">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-hidden">
+          <div className="p-3 border-b border-emerald-100 flex gap-2">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -95,10 +95,10 @@ export default function AdminTeacherBankDetails() {
               </li>
             ) : (
               teachers.map((t) => (
-                <li key={t.id} className="border-t border-violet-100 first:border-t-0">
+                <li key={t.id} className="border-t border-emerald-100 first:border-t-0">
                   <button
                     onClick={() => setSelectedId(t.id)}
-                    className={`w-full text-left px-4 py-2 text-sm ${selectedId === t.id ? "bg-violet-50 text-violet-700 font-medium" : "text-slate-700"}`}
+                    className={`w-full text-left px-4 py-2 text-sm ${selectedId === t.id ? "bg-emerald-50 text-emerald-700 font-medium" : "text-slate-700"}`}
                   >
                     {t.fullName}
                   </button>
@@ -109,11 +109,11 @@ export default function AdminTeacherBankDetails() {
         </div>
 
         {!selectedId ? (
-          <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+          <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
             <p className="text-slate-500 text-sm">Select a teacher to view or edit their payout account.</p>
           </div>
         ) : (
-        <form onSubmit={handleSubmit} className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Payout Account</h2>
           {error && <p className="text-red-600 text-sm">{error}</p>}
           {message && <p className="text-emerald-700 text-sm">{message}</p>}
@@ -154,7 +154,7 @@ export default function AdminTeacherBankDetails() {
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
             />
           </div>
-          <button type="submit" className="bg-violet-700 text-white rounded px-5 py-2 text-sm font-medium">
+          <button type="submit" className="bg-emerald-700 text-white rounded px-5 py-2 text-sm font-medium">
             Save Bank Details
           </button>
         </form>

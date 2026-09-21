@@ -137,7 +137,7 @@ export default function TeacherAttendanceQr() {
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Start a Session</h2>
           {classes.length === 0 ? (
             <p className="text-slate-500 text-sm">No classes assigned to you yet.</p>
@@ -172,7 +172,7 @@ export default function TeacherAttendanceQr() {
               <button
                 onClick={handleCreateSession}
                 disabled={busy}
-                className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
+                className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
               >
                 Generate QR &amp; Open Session
               </button>
@@ -180,7 +180,7 @@ export default function TeacherAttendanceQr() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 flex flex-col items-center justify-center">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 flex flex-col items-center justify-center">
           {activeSession ? (
             <>
               <h2 className="font-semibold text-slate-800 mb-2">{activeSession.subject}</h2>
@@ -206,7 +206,7 @@ export default function TeacherAttendanceQr() {
                     ))}
                   </select>
                   <div className="flex gap-2 mt-1">
-                    <button onClick={handleRegenerateQr} disabled={busy} className="text-xs text-violet-700 hover:underline disabled:opacity-50">
+                    <button onClick={handleRegenerateQr} disabled={busy} className="text-xs text-emerald-700 hover:underline disabled:opacity-50">
                       Regenerate QR
                     </button>
                     <button onClick={handleClose} disabled={busy} className="text-xs text-red-600 hover:underline disabled:opacity-50">
@@ -223,7 +223,7 @@ export default function TeacherAttendanceQr() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Live Attendance</h2>
           {!live ? (
             <p className="text-slate-500 text-sm">Open a session to see live counts.</p>

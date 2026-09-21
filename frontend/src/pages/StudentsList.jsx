@@ -58,9 +58,9 @@ export default function StudentsList() {
       ) : students.length === 0 ? (
         <p className="text-slate-500 text-sm">No students registered yet.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-violet-50 text-slate-600 text-left">
+            <thead className="bg-emerald-50 text-slate-600 text-left">
               <tr>
                 <th className="px-4 py-2">Student Code</th>
                 <th className="px-4 py-2">Name</th>
@@ -74,7 +74,7 @@ export default function StudentsList() {
                 <tr key={s.id} className="border-t border-slate-100">
                   <td className="px-4 py-2 font-mono text-xs">{s.studentCode}</td>
                   <td className="px-4 py-2">
-                    <Link to={`/students/${s.id}`} className="text-violet-700 hover:underline">
+                    <Link to={`/students/${s.id}`} className="text-emerald-700 hover:underline">
                       {s.fullName}
                     </Link>
                   </td>

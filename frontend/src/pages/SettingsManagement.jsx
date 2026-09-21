@@ -40,7 +40,7 @@ export default function SettingsManagement() {
         address: data.address || "",
         contactEmail: data.contactEmail || "",
         logoUrl: data.logoUrl || "",
-        themeColor: data.themeColor || "#7c3aed",
+        themeColor: data.themeColor || "#059669",
         attendanceThresholdPercent: String(data.attendanceThresholdPercent),
       })
     );
@@ -160,7 +160,7 @@ export default function SettingsManagement() {
   return (
     <DashboardShell title="Settings">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <form onSubmit={handleSubmit} className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Institute Settings</h2>
           {error && <p className="text-red-600 text-sm">{error}</p>}
           {message && <p className="text-emerald-700 text-sm">{message}</p>}
@@ -233,12 +233,12 @@ export default function SettingsManagement() {
             </div>
           </div>
 
-          <button type="submit" disabled={savingSettings} className="bg-violet-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
+          <button type="submit" disabled={savingSettings} className="bg-emerald-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
             Save Settings
           </button>
         </form>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 text-center space-y-3">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 text-center space-y-3">
           <h3 className="font-medium text-slate-700 text-sm">Preview</h3>
           <div className="flex justify-center">
             {form.logoUrl ? (
@@ -260,7 +260,7 @@ export default function SettingsManagement() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        <form onSubmit={handlePaymentSubmit} className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handlePaymentSubmit} className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Payment Account</h2>
           {paymentError && <p className="text-red-600 text-sm">{paymentError}</p>}
           {paymentMessage && <p className="text-emerald-700 text-sm">{paymentMessage}</p>}
@@ -335,12 +335,12 @@ export default function SettingsManagement() {
               {paymentAccount && <span className="block">Webhook secret: {paymentAccount.hasWebhookSecret ? "configured" : "not set"}</span>}
             </p>
           </div>
-          <button type="submit" disabled={savingPayment} className="bg-violet-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
+          <button type="submit" disabled={savingPayment} className="bg-emerald-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
             Save Payment Account
           </button>
         </form>
 
-        <form onSubmit={handleSplitSubmit} className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handleSplitSubmit} className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Revenue Split</h2>
           {splitError && <p className="text-red-600 text-sm">{splitError}</p>}
           {splitMessage && <p className="text-emerald-700 text-sm">{splitMessage}</p>}
@@ -362,12 +362,12 @@ export default function SettingsManagement() {
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
             />
           </div>
-          <button type="submit" disabled={savingSplit} className="bg-violet-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
+          <button type="submit" disabled={savingSplit} className="bg-emerald-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
             Save Revenue Split
           </button>
         </form>
 
-        <form onSubmit={handleBankSubmit} className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handleBankSubmit} className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Institute Bank Details</h2>
           {bankError && <p className="text-red-600 text-sm">{bankError}</p>}
           {bankMessage && <p className="text-emerald-700 text-sm">{bankMessage}</p>}
@@ -432,7 +432,7 @@ export default function SettingsManagement() {
               />
             </div>
           </div>
-          <button type="submit" disabled={savingBank} className="bg-violet-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
+          <button type="submit" disabled={savingBank} className="bg-emerald-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
             Save Institute Bank Details
           </button>
         </form>

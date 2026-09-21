@@ -111,11 +111,11 @@ export default function StudentView() {
   return (
     <DashboardShell title="Student View">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Attendance Check-In</h2>
 
           {!scanning && (
-            <button onClick={startScan} className="bg-violet-700 text-white rounded px-4 py-2 text-sm">
+            <button onClick={startScan} className="bg-emerald-700 text-white rounded px-4 py-2 text-sm">
               Scan Session QR
             </button>
           )}
@@ -140,7 +140,7 @@ export default function StudentView() {
             <h3 className="font-medium text-slate-700 text-sm mb-2">My Identity QR Code</h3>
             {profile ? (
               <>
-                <button onClick={() => setShowQr((v) => !v)} className="text-xs text-violet-700 hover:underline mb-3">
+                <button onClick={() => setShowQr((v) => !v)} className="text-xs text-emerald-700 hover:underline mb-3">
                   {showQr ? "Hide" : "Show"} QR Code
                 </button>
                 {showQr && (
@@ -156,7 +156,7 @@ export default function StudentView() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">My Timetable</h2>
           {sortedTimetable.length === 0 ? (
             <p className="text-slate-500 text-sm">No timetable slots published yet.</p>
@@ -177,7 +177,7 @@ export default function StudentView() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">My Fee Summary</h2>
           {fees ? (
             <>
@@ -209,7 +209,7 @@ export default function StudentView() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">My Parents</h2>
           {parents.length === 0 ? (
             <p className="text-slate-500 text-sm mb-3">No parent account linked yet.</p>
@@ -253,7 +253,7 @@ export default function StudentView() {
               onChange={(e) => setParentForm({ ...parentForm, password: e.target.value })}
               className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm"
             />
-            <button type="submit" className="bg-violet-700 text-white rounded px-4 py-1.5 text-sm w-full">
+            <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-1.5 text-sm w-full">
               Add Parent
             </button>
           </form>

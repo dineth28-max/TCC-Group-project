@@ -49,9 +49,9 @@ export default function TimetableBuilder() {
     <DashboardShell title="Timetable Builder">
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-violet-50 text-slate-600 text-left">
+            <thead className="bg-emerald-50 text-slate-600 text-left">
               <tr>
                 <th className="px-4 py-2">Day</th>
                 <th className="px-4 py-2">Time</th>
@@ -72,7 +72,7 @@ export default function TimetableBuilder() {
                 slots
                   .sort((a, b) => DAYS.indexOf(a.dayOfWeek) - DAYS.indexOf(b.dayOfWeek) || a.startTime.localeCompare(b.startTime))
                   .map((s) => (
-                    <tr key={s.id} className="border-t border-violet-100">
+                    <tr key={s.id} className="border-t border-emerald-100">
                       <td className="px-4 py-2">{s.dayOfWeek}</td>
                       <td className="px-4 py-2 font-mono text-xs">{s.startTime}–{s.endTime}</td>
                       <td className="px-4 py-2">{s.subject}</td>
@@ -90,7 +90,7 @@ export default function TimetableBuilder() {
           </table>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Add Slot</h2>
           {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
           <form onSubmit={handleCreate} className="space-y-3">
@@ -168,7 +168,7 @@ export default function TimetableBuilder() {
             <button
               type="submit"
               disabled={!selectedClass?.teacherUserId}
-              className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Slot
             </button>

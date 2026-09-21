@@ -2,7 +2,7 @@ name: CD part
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CIssss"]
     types:
       - completed
 

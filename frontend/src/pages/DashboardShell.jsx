@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
-import { Menu, Bell, ChevronDown, LogOut } from "lucide-react";
+import { Menu, Bell, ChevronDown, LogOut, Search } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { navItemsForRole } from "../navConfig";
 
@@ -62,7 +62,7 @@ export default function DashboardShell({ title, children }) {
   }
 
   return (
-    <div className="h-screen flex bg-violet-50 overflow-hidden">
+    <div className="h-screen flex bg-[#eef2ec] overflow-hidden">
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-20 md:hidden"
@@ -72,18 +72,18 @@ export default function DashboardShell({ title, children }) {
       )}
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-30 h-full bg-[#1e1333] text-violet-200 flex flex-col transition-all duration-200 w-64 ${
-          collapsed ? "md:w-[72px]" : "md:w-64"
+        className={`fixed md:static inset-y-0 left-0 z-30 h-full bg-white border-r border-slate-200/80 flex flex-col transition-all duration-200 w-64 ${
+          collapsed ? "md:w-[76px]" : "md:w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10 shrink-0">
-          <div className="h-9 w-9 rounded-lg bg-violet-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+        <div className="flex items-center gap-3 px-4 h-16 shrink-0">
+          <div className="h-9 w-9 rounded-xl bg-[#122a1e] text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
             CS
           </div>
-          {!collapsed && <span className="font-semibold text-white whitespace-nowrap md:inline">CSMAS</span>}
+          {!collapsed && <span className="font-semibold text-slate-900 whitespace-nowrap md:inline">CSMAS</span>}
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
           {navItems.map((entry) =>
             entry.items ? (
               <div key={entry.label}>
@@ -92,8 +92,8 @@ export default function DashboardShell({ title, children }) {
                   onClick={() => toggleGroup(entry.label)}
                   title={collapsed ? entry.label : undefined}
                   aria-expanded={expandedGroups.has(entry.label)}
-                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/10 hover:text-white ${
-                    isGroupActive(entry, location.pathname) ? "text-white" : "text-violet-200"
+                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-slate-100 ${
+                    isGroupActive(entry, location.pathname) ? "text-slate-900" : "text-slate-500"
                   }`}
                 >
                   <entry.icon size={18} className="shrink-0" />
@@ -117,7 +117,7 @@ export default function DashboardShell({ title, children }) {
                   style={{ gridTemplateRows: expandedGroups.has(entry.label) ? "1fr" : "0fr" }}
                 >
                   <div className="overflow-hidden">
-                    <div className="mt-1 ml-4 pl-3 border-l border-white/10 space-y-1 pb-0.5">
+                    <div className="mt-1 ml-4 pl-3 border-l border-slate-200 space-y-1 pb-0.5">
                       {entry.items.map((item) => (
                         <NavLink
                           key={item.path}
@@ -127,8 +127,10 @@ export default function DashboardShell({ title, children }) {
                           tabIndex={expandedGroups.has(entry.label) ? undefined : -1}
                           onClick={() => setMobileOpen(false)}
                           className={({ isActive }) =>
-                            `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                              isActive ? "bg-violet-600 text-white shadow-sm" : "text-violet-300 hover:bg-white/10 hover:text-white"
+                            `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                              isActive
+                                ? "bg-[#122a1e] text-white shadow-sm"
+                                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                             }`
                           }
                         >
@@ -148,8 +150,8 @@ export default function DashboardShell({ title, children }) {
                 title={collapsed ? entry.label : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                    isActive ? "bg-violet-600 text-white shadow-sm" : "text-violet-200 hover:bg-white/10 hover:text-white"
+                  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                    isActive ? "bg-[#122a1e] text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                   }`
                 }
               >
@@ -159,32 +161,51 @@ export default function DashboardShell({ title, children }) {
             )
           )}
         </nav>
+
+        <div className="p-3 border-t border-slate-100">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-red-600 transition"
+          >
+            <LogOut size={18} className="shrink-0" />
+            <span className={collapsed ? "md:hidden" : ""}>Log out</span>
+          </button>
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-gradient-to-r from-violet-600 to-purple-500 flex items-center justify-between px-4 shadow-sm shrink-0">
-          <div className="flex items-center gap-3 text-white min-w-0">
+        <header className="h-16 bg-white/70 backdrop-blur border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 shrink-0">
+          <div className="flex items-center gap-3 text-slate-900 min-w-0">
             <button
               onClick={toggleSidebar}
               aria-label="Toggle sidebar"
-              className="p-2 rounded-md hover:bg-white/15 transition"
+              className="p-2 rounded-md hover:bg-slate-100 transition"
             >
               <Menu size={20} />
             </button>
             <h1 className="text-lg font-semibold truncate">{title}</h1>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button aria-label="Notifications" className="p-2 rounded-full hover:bg-white/15 text-white transition relative">
-              <Bell size={20} />
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              aria-label="Search"
+              className="hidden sm:flex p-2.5 rounded-full hover:bg-slate-100 text-slate-500 transition"
+            >
+              <Search size={18} />
+            </button>
+            <button
+              aria-label="Notifications"
+              className="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 transition relative"
+            >
+              <Bell size={18} />
             </button>
 
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-white/15 transition text-white"
+                className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-slate-100 transition text-slate-700"
               >
-                <span className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold">
+                <span className="h-8 w-8 rounded-full bg-[#122a1e] text-emerald-400 flex items-center justify-center text-xs font-semibold">
                   {initials(user?.fullName)}
                 </span>
                 <span className="hidden sm:block text-sm font-medium">{user?.fullName}</span>
@@ -192,7 +213,7 @@ export default function DashboardShell({ title, children }) {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-violet-100 py-2 z-20 text-slate-700">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-20 text-slate-700">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-sm font-medium">{user?.fullName}</p>
                     <p className="text-xs text-slate-500">

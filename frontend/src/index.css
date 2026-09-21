@@ -7,16 +7,16 @@
 body {
   margin: 0;
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
-  background: #f5f3ff;
+  background: #eef2ec;
   min-height: 100vh;
 }
 
 ::selection {
-  background: #ddd6fe;
+  background: #bbf7d0;
 }
 
 input,
 select,
 textarea {
-  outline-color: #7c3aed;
+  outline-color: #059669;
 }

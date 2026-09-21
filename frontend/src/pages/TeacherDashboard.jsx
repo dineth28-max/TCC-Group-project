@@ -27,10 +27,10 @@ export default function TeacherDashboard() {
   return (
     <DashboardShell title="Teacher Dashboard">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-slate-800">Today's Sessions</h2>
-            <Link to="/teacher/attendance-qr" className="text-xs text-violet-700 hover:underline">
+            <Link to="/teacher/attendance-qr" className="text-xs text-emerald-700 hover:underline">
               Open a new session
             </Link>
           </div>
@@ -42,7 +42,7 @@ export default function TeacherDashboard() {
                 <li key={s.id} className="flex items-center justify-between border-t border-slate-100 pt-2">
                   <span>{s.subject}</span>
                   <span className={`text-xs ${s.status === "Open" ? "text-emerald-600" : "text-slate-500"}`}>{s.status}</span>
-                  <Link to={`/teacher/attendance-qr?sessionId=${s.id}`} className="text-xs text-violet-700 hover:underline">
+                  <Link to={`/teacher/attendance-qr?sessionId=${s.id}`} className="text-xs text-emerald-700 hover:underline">
                     View
                   </Link>
                 </li>
@@ -51,7 +51,7 @@ export default function TeacherDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">
             Class Performance {performance ? `— ${performance.subject}` : ""}
             <span className="text-xs text-slate-500 font-normal"> (avg. attendance, last 4 weeks)</span>

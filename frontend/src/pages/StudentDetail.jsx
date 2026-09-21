@@ -181,11 +181,11 @@ export default function StudentDetail() {
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-slate-800">Profile</h2>
             <div className="flex gap-3">
-              <button onClick={() => setEditing((v) => !v)} className="text-sm text-violet-700 hover:underline">
+              <button onClick={() => setEditing((v) => !v)} className="text-sm text-emerald-700 hover:underline">
                 {editing ? "Cancel" : "Edit"}
               </button>
               <button onClick={handleToggleStatus} disabled={busy} className="text-sm text-slate-500 hover:text-red-600 disabled:opacity-50">
@@ -243,7 +243,7 @@ export default function StudentDetail() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <button type="submit" className="bg-violet-700 text-white rounded px-4 py-2 text-sm">
+                <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-2 text-sm">
                   Save
                 </button>
               </div>
@@ -358,7 +358,7 @@ export default function StudentDetail() {
                 onChange={(e) => setCredentials({ ...credentials, loginPassword: e.target.value })}
                 className="border border-slate-300 rounded px-2 py-1 text-sm flex-1"
               />
-              <button type="submit" className="bg-violet-700 text-white text-xs rounded px-3 py-1.5 whitespace-nowrap">
+              <button type="submit" className="bg-emerald-700 text-white text-xs rounded px-3 py-1.5 whitespace-nowrap">
                 {student.loginEmail ? "Reset Login" : "Create Login"}
               </button>
             </form>
@@ -418,14 +418,14 @@ export default function StudentDetail() {
                 onChange={(e) => setNewParent({ ...newParent, email: e.target.value })}
                 className="border border-slate-300 rounded px-2 py-1 text-sm flex-1"
               />
-              <button type="submit" className="bg-violet-700 text-white text-xs rounded px-3 py-1.5 whitespace-nowrap">
+              <button type="submit" className="bg-emerald-700 text-white text-xs rounded px-3 py-1.5 whitespace-nowrap">
                 Create &amp; Link
               </button>
             </form>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 text-center space-y-3">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 text-center space-y-3">
           <h3 className="font-medium text-slate-700 text-sm">Identity QR Code</h3>
           <div className="flex justify-center">
             <QRCodeSVG value={student.qrPayload} size={160} role="img" aria-label={`Identity QR code for ${student.fullName}`} />

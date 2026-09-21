@@ -82,9 +82,9 @@ export default function AdminScheduleRequests() {
 
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-violet-50 text-slate-600 text-left">
+          <thead className="bg-emerald-50 text-slate-600 text-left">
             <tr>
               <th className="px-4 py-2">Teacher</th>
               <th className="px-4 py-2">Subject</th>
@@ -104,7 +104,7 @@ export default function AdminScheduleRequests() {
               </tr>
             ) : (
               filtered.map((r) => (
-                <tr key={r.id} className="border-t border-violet-100">
+                <tr key={r.id} className="border-t border-emerald-100">
                   <td className="px-4 py-2">{r.requestedByName}</td>
                   <td className="px-4 py-2">{r.subject}</td>
                   <td className="px-4 py-2 font-mono text-xs">{r.dayOfWeek} {r.startTime}–{r.endTime}</td>

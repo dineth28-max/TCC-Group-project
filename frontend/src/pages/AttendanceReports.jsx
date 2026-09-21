@@ -46,7 +46,7 @@ export default function AttendanceReports() {
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Below-Threshold Students</h2>
           <div className="flex items-center gap-2 mb-4">
             <label htmlFor="attendance-threshold" className="text-xs text-slate-500">Threshold %</label>
@@ -59,7 +59,7 @@ export default function AttendanceReports() {
               onChange={(e) => setThreshold(Number(e.target.value))}
               className="w-20 border border-slate-300 rounded px-2 py-1 text-sm"
             />
-            <button onClick={loadFlagged} className="text-xs text-violet-700 hover:underline">
+            <button onClick={loadFlagged} className="text-xs text-emerald-700 hover:underline">
               Recalculate
             </button>
           </div>
@@ -85,7 +85,7 @@ export default function AttendanceReports() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Monthly Export</h2>
           <div className="flex gap-2 mb-4">
             <select
@@ -111,7 +111,7 @@ export default function AttendanceReports() {
             />
           </div>
           <div className="flex gap-2">
-            <button onClick={() => handleExport("xlsx")} className="bg-violet-700 text-white rounded px-4 py-2 text-sm">
+            <button onClick={() => handleExport("xlsx")} className="bg-emerald-700 text-white rounded px-4 py-2 text-sm">
               Export XLSX
             </button>
             <button onClick={() => handleExport("pdf")} className="bg-slate-600 text-white rounded px-4 py-2 text-sm">

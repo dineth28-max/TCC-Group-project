@@ -45,8 +45,8 @@ export default function ChangePassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-violet-50 px-4">
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50 px-4">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-8 w-full max-w-md">
         <h1 className="text-lg font-semibold text-slate-800 mb-1">Set Your Password</h1>
         <p className="text-sm text-slate-500 mb-6">
           {user?.mustChangePassword
@@ -98,7 +98,7 @@ export default function ChangePassword() {
           <button
             type="submit"
             disabled={saving}
-            className="bg-violet-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
+            className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
           >
             {saving ? "Saving…" : "Set Password"}
           </button>

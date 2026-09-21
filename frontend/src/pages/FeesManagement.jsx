@@ -121,20 +121,20 @@ export default function FeesManagement() {
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4">
           <p className="text-xs text-slate-500">Collection Rate ({summary?.period})</p>
           <p className="text-2xl font-semibold text-slate-800">{summary ? `${summary.collectionRatePercent}%` : "…"}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4">
           <p className="text-xs text-slate-500">Total Invoiced</p>
           <p className="text-2xl font-semibold text-slate-800">{summary ? summary.totalInvoiced : "…"}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4">
           <p className="text-xs text-slate-500">Total Collected</p>
           <p className="text-2xl font-semibold text-slate-800">{summary ? summary.totalCollected : "…"}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4 flex flex-col justify-between">
-          <button onClick={handleRunBilling} className="bg-violet-700 text-white rounded px-3 py-1.5 text-sm">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4 flex flex-col justify-between">
+          <button onClick={handleRunBilling} className="bg-emerald-700 text-white rounded px-3 py-1.5 text-sm">
             Run Billing Now
           </button>
           {billingResult && (
@@ -146,7 +146,7 @@ export default function FeesManagement() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Fee Structures</h2>
           <form onSubmit={handleCreateStructure} className="flex gap-2 mb-4">
             <select
@@ -169,7 +169,7 @@ export default function FeesManagement() {
               onChange={(e) => setStructureForm({ ...structureForm, amount: e.target.value })}
               className="w-28 border border-slate-300 rounded px-2 py-1.5 text-sm"
             />
-            <button type="submit" className="bg-violet-700 text-white rounded px-3 py-1.5 text-sm">
+            <button type="submit" className="bg-emerald-700 text-white rounded px-3 py-1.5 text-sm">
               Save
             </button>
           </form>
@@ -193,7 +193,7 @@ export default function FeesManagement() {
           </table>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">Discount Rules</h2>
           <form onSubmit={handleCreateDiscount} className="flex gap-2 mb-4">
             <select
@@ -226,7 +226,7 @@ export default function FeesManagement() {
               onChange={(e) => setDiscountForm({ ...discountForm, percentOff: e.target.value })}
               className="w-20 border border-slate-300 rounded px-2 py-1.5 text-sm"
             />
-            <button type="submit" className="bg-violet-700 text-white rounded px-3 py-1.5 text-sm">
+            <button type="submit" className="bg-emerald-700 text-white rounded px-3 py-1.5 text-sm">
               Add
             </button>
           </form>
@@ -262,7 +262,7 @@ export default function FeesManagement() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
         <h2 className="font-semibold text-slate-800 mb-4">Invoices — {thisPeriod()}</h2>
         {invoices.length === 0 ? (
           <p className="text-slate-500 text-sm">No invoices for this period yet. Run billing above.</p>
@@ -301,7 +301,7 @@ export default function FeesManagement() {
                           onChange={(e) => setPayAmounts((prev) => ({ ...prev, [i.id]: e.target.value }))}
                           className="w-20 border border-slate-300 rounded px-2 py-1 text-xs"
                         />
-                        <button onClick={() => handlePay(i)} className="text-xs text-violet-700 hover:underline">
+                        <button onClick={() => handlePay(i)} className="text-xs text-emerald-700 hover:underline">
                           Pay
                         </button>
                       </div>

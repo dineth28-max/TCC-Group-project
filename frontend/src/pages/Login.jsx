@@ -28,13 +28,13 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-600 via-violet-500 to-purple-400 px-4">
+    <main className="min-h-screen flex items-center justify-center bg-[#eef2ec] px-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-sm space-y-4"
+        className="bg-white shadow-xl border border-slate-200/80 rounded-2xl p-8 w-full max-w-sm space-y-4"
       >
         <div className="flex flex-col items-center text-center gap-2 mb-2">
-          <div className="h-12 w-12 rounded-xl bg-violet-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <div className="h-12 w-12 rounded-xl bg-[#122a1e] text-emerald-400 flex items-center justify-center font-bold text-lg shadow-sm">
             CS
           </div>
           <h1 className="text-xl font-semibold text-slate-800">CSMAS Sign In</h1>
@@ -54,7 +54,7 @@ export default function Login() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-500 outline-none transition"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-500 outline-none transition"
             placeholder="you@institute.lk"
           />
         </div>
@@ -66,7 +66,7 @@ export default function Login() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-500 outline-none transition"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-500 outline-none transition"
             placeholder="••••••••"
           />
         </div>
@@ -74,7 +74,7 @@ export default function Login() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-violet-700 hover:bg-violet-800 disabled:opacity-60 text-white rounded-lg py-2 text-sm font-medium transition shadow-sm"
+          className="w-full bg-[#122a1e] hover:bg-[#1a3a2a] disabled:opacity-60 text-white rounded-lg py-2 text-sm font-medium transition shadow-sm"
         >
           {submitting ? "Signing in…" : "Sign In"}
         </button>

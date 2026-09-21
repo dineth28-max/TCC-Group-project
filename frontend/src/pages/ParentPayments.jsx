@@ -60,13 +60,13 @@ export default function ParentPayments() {
         <p className="text-slate-500 text-sm">No children are linked to your account yet.</p>
       ) : (
         <>
-          <div className="flex gap-2 bg-white border border-violet-100 rounded-full p-1.5 shadow-sm w-fit mb-4">
+          <div className="flex gap-2 bg-white border border-emerald-100 rounded-full p-1.5 shadow-sm w-fit mb-4">
             {children.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                  selectedId === c.id ? "bg-violet-700 text-white shadow-sm" : "text-slate-600 hover:bg-violet-100"
+                  selectedId === c.id ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600 hover:bg-emerald-100"
                 }`}
               >
                 {c.fullName}
@@ -77,9 +77,9 @@ export default function ParentPayments() {
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           {message && <p className="text-emerald-700 text-sm mb-4">{message}</p>}
 
-          <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-violet-50 text-slate-600 text-left">
+              <thead className="bg-emerald-50 text-slate-600 text-left">
                 <tr>
                   <th className="px-4 py-2">Subject</th>
                   <th className="px-4 py-2">Period</th>
@@ -97,7 +97,7 @@ export default function ParentPayments() {
                   </tr>
                 ) : (
                   payable.map((inv) => (
-                    <tr key={inv.id} className="border-t border-violet-100">
+                    <tr key={inv.id} className="border-t border-emerald-100">
                       <td className="px-4 py-2">{inv.subject}</td>
                       <td className="px-4 py-2 text-xs text-slate-500">{inv.billingPeriod}</td>
                       <td className="px-4 py-2 font-medium text-red-600">{(inv.totalDue - inv.amountPaid).toFixed(2)}</td>
@@ -110,7 +110,7 @@ export default function ParentPayments() {
                         <button
                           onClick={() => handlePay(inv.id)}
                           disabled={payingId === inv.id}
-                          className="bg-violet-700 text-white rounded px-3 py-1.5 text-xs disabled:opacity-50"
+                          className="bg-emerald-700 text-white rounded px-3 py-1.5 text-xs disabled:opacity-50"
                         >
                           {payingId === inv.id ? "Processing…" : "Pay Now"}
                         </button>

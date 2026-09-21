@@ -37,7 +37,7 @@ export default function TeacherBankDetails() {
   return (
     <DashboardShell title="Bank Details">
       <div className="max-w-xl">
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-violet-100 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Payout Account</h2>
           <p className="text-xs text-slate-500">
             This is the account your earnings are paid out to. It's visible to admins on the Teacher Bank Details page.
@@ -81,7 +81,7 @@ export default function TeacherBankDetails() {
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
             />
           </div>
-          <button type="submit" disabled={busy} className="bg-violet-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
+          <button type="submit" disabled={busy} className="bg-emerald-700 text-white rounded px-5 py-2 text-sm font-medium disabled:opacity-50">
             Save Bank Details
           </button>
         </form>

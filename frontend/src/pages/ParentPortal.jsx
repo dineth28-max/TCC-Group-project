@@ -62,13 +62,13 @@ export default function ParentPortal() {
         {children.length === 0 ? (
           <p className="text-slate-500 text-sm">No children are linked to your account yet.</p>
         ) : (
-          <div className="flex gap-2 bg-white border border-violet-100 rounded-full p-1.5 shadow-sm w-fit">
+          <div className="flex gap-2 bg-white border border-emerald-100 rounded-full p-1.5 shadow-sm w-fit">
             {children.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                  selectedId === c.id ? "bg-violet-700 text-white shadow-sm" : "text-slate-600 hover:bg-violet-100"
+                  selectedId === c.id ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600 hover:bg-emerald-100"
                 }`}
               >
                 {c.fullName}
@@ -80,7 +80,7 @@ export default function ParentPortal() {
         <div className="relative">
           <button
             onClick={handleOpenInbox}
-            className="relative bg-white border border-violet-100 rounded-full px-4 py-2 text-sm shadow-sm hover:bg-violet-50"
+            className="relative bg-white border border-emerald-100 rounded-full px-4 py-2 text-sm shadow-sm hover:bg-emerald-50"
           >
             🔔 Notifications
             {inbox.unreadCount > 0 && (
@@ -90,7 +90,7 @@ export default function ParentPortal() {
             )}
           </button>
           {showInbox && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-violet-100 rounded-lg shadow-lg p-3 z-10 max-h-96 overflow-y-auto">
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-emerald-100 rounded-lg shadow-lg p-3 z-10 max-h-96 overflow-y-auto">
               {inbox.items.length === 0 ? (
                 <p className="text-xs text-slate-500">No notifications yet.</p>
               ) : (
@@ -104,7 +104,7 @@ export default function ParentPortal() {
                   >
                     <div className="flex items-center justify-between">
                       <span>{n.subject}</span>
-                      {!n.isRead && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
+                      {!n.isRead && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
                     </div>
                     <p className="text-slate-500 mt-0.5">{n.message}</p>
                   </button>
@@ -118,21 +118,21 @@ export default function ParentPortal() {
       {selectedChild && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
+            <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-slate-800">Attendance — {selectedChild.fullName}</h2>
-                <span className="text-2xl font-semibold text-violet-700">
+                <span className="text-2xl font-semibold text-emerald-700">
                   {attendance ? `${attendance.overallRatePercent}%` : "…"}
                 </span>
               </div>
               {attendance && attendance.bySubject.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={attendance.bySubject}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ede9fe" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#dcfce7" />
                     <XAxis dataKey="subject" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} unit="%" />
                     <Tooltip />
-                    <Bar dataKey="ratePercent" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="ratePercent" fill="#059669" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -140,7 +140,7 @@ export default function ParentPortal() {
               )}
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
+            <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
               <h3 className="font-semibold text-slate-800 mb-3">Announcements</h3>
               {announcements.length === 0 ? (
                 <p className="text-xs text-slate-500">No announcements yet.</p>
@@ -158,7 +158,7 @@ export default function ParentPortal() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-5">
+          <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
             <h3 className="font-semibold text-slate-800 mb-3">Fee Statement</h3>
             {fees ? (
               <>

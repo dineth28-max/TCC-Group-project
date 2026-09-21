@@ -70,7 +70,7 @@ export default function BranchesManagement() {
   return (
     <DashboardShell title="Branches">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
           <h2 className="font-semibold text-slate-800 mb-4">All Branches</h2>
           {branches.length === 0 ? (
             <p className="text-slate-500 text-sm">No branches yet.</p>
@@ -96,7 +96,7 @@ export default function BranchesManagement() {
                     </td>
                     {canManage && (
                       <td className="py-1.5 text-right space-x-3 whitespace-nowrap">
-                        <button onClick={() => startEdit(b)} className="text-xs text-violet-700 hover:underline">
+                        <button onClick={() => startEdit(b)} className="text-xs text-emerald-700 hover:underline">
                           Edit
                         </button>
                         <button onClick={() => handleToggleStatus(b)} className="text-xs text-slate-500 hover:text-red-600">
@@ -112,7 +112,7 @@ export default function BranchesManagement() {
         </div>
 
         {canManage && (
-          <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
             <h2 className="font-semibold text-slate-800 mb-4">{editingId ? "Edit Branch" : "Create Branch"}</h2>
             {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
             {message && <p className="text-emerald-700 text-sm mb-2">{message}</p>}
@@ -168,7 +168,7 @@ export default function BranchesManagement() {
                 />
               </div>
               <div className="flex gap-2">
-                <button type="submit" className="bg-violet-700 text-white rounded px-4 py-2 text-sm flex-1">
+                <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-2 text-sm flex-1">
                   {editingId ? "Save Changes" : "Create"}
                 </button>
                 {editingId && (

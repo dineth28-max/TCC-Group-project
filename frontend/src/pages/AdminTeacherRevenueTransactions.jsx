@@ -37,7 +37,7 @@ export default function AdminTeacherRevenueTransactions() {
 
   return (
     <DashboardShell title="Teacher Revenue Transactions">
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 p-4 mb-4 flex flex-wrap gap-3 items-end">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4 mb-4 flex flex-wrap gap-3 items-end">
         <div>
           <label htmlFor="filter-teacher" className="block text-xs text-slate-500 mb-1">Teacher</label>
           <select
@@ -89,9 +89,9 @@ export default function AdminTeacherRevenueTransactions() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-violet-100 overflow-x-auto">
+      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-violet-50 text-slate-600 text-left">
+          <thead className="bg-emerald-50 text-slate-600 text-left">
             <tr>
               <th className="px-4 py-2">Date</th>
               <th className="px-4 py-2">Teacher</th>
@@ -111,7 +111,7 @@ export default function AdminTeacherRevenueTransactions() {
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.id} className="border-t border-violet-100">
+                <tr key={r.id} className="border-t border-emerald-100">
                   <td className="px-4 py-2 text-xs text-slate-500">{new Date(r.createdAt).toLocaleString()}</td>
                   <td className="px-4 py-2">{r.teacherName}</td>
                   <td className="px-4 py-2 text-xs">{r.grossAmount.toFixed(2)}</td>
@@ -126,7 +126,7 @@ export default function AdminTeacherRevenueTransactions() {
                   </td>
                   <td className="px-4 py-2 text-right">
                     {r.payoutStatus !== "Paid" && (
-                      <button onClick={() => handleMarkPaid(r.id)} className="text-xs text-violet-700 hover:underline">
+                      <button onClick={() => handleMarkPaid(r.id)} className="text-xs text-emerald-700 hover:underline">
                         Mark Paid
                       </button>
                     )}

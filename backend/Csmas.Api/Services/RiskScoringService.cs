@@ -101,27 +101,34 @@ public class RiskScoringService
     }
 
     private static List<string> TopFactors(Dtos.AiPredictRequest request)
-    {
-        var candidates = new List<(double severity, string phrase)>();
+{
+    var candidates = new List<(double severity, string phrase)>();
 
-        if (request.AttendanceRate < 0.75)
-        {
-            candidates.Add((0.75 - request.AttendanceRate, $"Attendance rate is only {Math.Round(request.AttendanceRate * 100)}%"));
-        }
-        if (request.FinancialIssues == 1)
-        {
-            candidates.Add((0.5, "Has an overdue fee invoice"));
-        }
-        if (request.EngagementScore < 5.0)
-        {
-            candidates.Add((5.0 - request.EngagementScore, "Low engagement — infrequent attendance and parent portal activity"));
-        }
+    if (request.AttendanceRate < 0.75)
+        candidates.Add((0.75 - request.AttendanceRate,
+            $"Attendance rate is only {Math.Round(request.AttendanceRate * 100)}% (below 75% threshold)"));
 
-        var factors = candidates.OrderByDescending(c => c.severity).Take(3).Select(c => c.phrase).ToList();
-        if (factors.Count == 0)
-        {
-            factors.Add("No single dominant risk factor — score reflects overall attendance and engagement pattern");
-        }
-        return factors;
-    }
+    if (request.LateRate > 0.20)
+        candidates.Add((request.LateRate,
+            $"Frequently late — {Math.Round(request.LateRate * 100)}% of sessions checked in after grace period"));
+
+    if (request.OverdueInvoiceCount > 0)
+        candidates.Add((0.4 + request.OverdueInvoiceCount * 0.1,
+            request.OverdueInvoiceCount == 1
+                ? "Has 1 overdue fee invoice"
+                : $"Has {request.OverdueInvoiceCount} overdue fee invoices"));
+
+    if (request.EngagementScore < 5.0)
+        candidates.Add((5.0 - request.EngagementScore,
+            $"Low engagement score ({request.EngagementScore}/10) — infrequent attendance and low parent portal activity"));
+
+    if (request.ClassesEnrolled == 0)
+        candidates.Add((0.3, "Not enrolled in any class"));
+
+    var factors = candidates.OrderByDescending(c => c.severity).Take(3).Select(c => c.phrase).ToList();
+    if (factors.Count == 0)
+        factors.Add("No single dominant risk factor — score reflects overall attendance and engagement pattern");
+
+    return factors;
+}
 }

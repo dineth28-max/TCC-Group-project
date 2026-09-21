@@ -4,33 +4,42 @@ import numpy as np
 def generate_student_data(n_samples=1000, random_state=42):
     np.random.seed(random_state)
 
-    attendance_rate = np.random.uniform(0.3, 1.0, n_samples)
-    avg_grade = np.random.uniform(30, 100, n_samples)
-    assignments_submitted = np.random.randint(0, 20, n_samples)
-    failed_modules = np.random.randint(0, 6, n_samples)
-    financial_issues = np.random.choice([0, 1], n_samples, p=[0.75, 0.25])
-    engagement_score = np.random.uniform(1, 10, n_samples)
-    semester = np.random.randint(1, 9, n_samples)
-
-    # Dropout logic: low attendance + low grades + financial issues = higher risk
-    dropout_score = (
-        (1 - attendance_rate) * 0.35 +
-        ((100 - avg_grade) / 100) * 0.30 +
-        (financial_issues * 0.15) +
-        (failed_modules / 5) * 0.10 +
-        ((10 - engagement_score) / 10) * 0.10
+    # --- Real features (all sourced from CSMAS live data) ---
+    attendance_rate      = np.random.uniform(0.3, 1.0, n_samples)
+    late_rate            = np.clip(np.random.beta(2, 8, n_samples), 0.0, 0.5)   # skewed low: most students rarely late
+    financial_issues     = np.random.choice([0, 1], n_samples, p=[0.75, 0.25])
+    overdue_invoice_count = np.where(
+        financial_issues == 1,
+        np.random.randint(1, 5, n_samples),   # if financial issues → 1-4 overdue invoices
+        0
     )
-    dropout = (dropout_score > 0.45).astype(int)
+    engagement_score     = np.clip(
+        np.round(attendance_rate * 6.0 + np.random.uniform(0, 4, n_samples), 1),
+        1.0, 10.0
+    )
+    semester             = np.random.randint(1, 9, n_samples)
+    classes_enrolled     = np.random.randint(1, 6, n_samples)
+
+    # --- Dropout label logic (reflects real CSMAS signals only) ---
+    dropout_score = (
+        (1 - attendance_rate)                    * 0.35 +   # strongest signal
+        late_rate                                * 0.15 +   # frequent lateness also risky
+        (financial_issues * 0.20)               +           # overdue fee = strong dropout predictor
+        (overdue_invoice_count / 5)              * 0.10 +   # more overdue → higher risk
+        ((10 - engagement_score) / 10)           * 0.15 +   # low engagement = disengaged
+        (1 / classes_enrolled)                   * 0.05     # enrolled in fewer classes = less committed
+    )
+    dropout = (dropout_score > 0.42).astype(int)
 
     df = pd.DataFrame({
-        "attendance_rate": attendance_rate.round(2),
-        "avg_grade": avg_grade.round(2),
-        "assignments_submitted": assignments_submitted,
-        "failed_modules": failed_modules,
-        "financial_issues": financial_issues,
-        "engagement_score": engagement_score.round(2),
-        "semester": semester,
-        "dropout_risk": dropout
+        "attendance_rate":       np.round(attendance_rate, 3),
+        "late_rate":             np.round(late_rate, 3),
+        "financial_issues":      financial_issues,
+        "overdue_invoice_count": overdue_invoice_count,
+        "engagement_score":      np.round(engagement_score, 1),
+        "semester":              semester,
+        "classes_enrolled":      classes_enrolled,
+        "dropout_risk":          dropout
     })
 
     return df

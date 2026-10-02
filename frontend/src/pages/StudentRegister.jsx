@@ -241,10 +241,10 @@ export default function StudentRegister() {
               {classes.map((c) => (
                 <label
                   key={c.id}
-                  className={`px-3 py-1.5 rounded border text-sm cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition ${
                     form.classIds.includes(c.id)
-                      ? "bg-emerald-50 border-emerald-400 text-emerald-700"
-                      : "border-slate-300 text-slate-600"
+                      ? "bg-blue-50 border-[#2457FF] text-[#2457FF] font-semibold"
+                      : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   <input
@@ -263,7 +263,7 @@ export default function StudentRegister() {
         <button
           type="submit"
           disabled={submitting}
-          className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white rounded px-5 py-2 text-sm font-medium"
+          className="bg-[#2457FF] hover:bg-[#1b45db] disabled:opacity-60 text-white rounded-xl px-6 py-2.5 text-xs font-bold transition shadow-xs shadow-blue-500/20 cursor-pointer"
         >
           {submitting ? "Registering…" : "Register Student"}
         </button>

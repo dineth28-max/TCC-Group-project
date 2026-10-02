@@ -30,8 +30,8 @@ import AdminScheduleRequests from "./pages/AdminScheduleRequests";
 import TeacherBankDetails from "./pages/TeacherBankDetails";
 import StudentPayments from "./pages/StudentPayments";
 import ParentPayments from "./pages/ParentPayments";
-import AdminAuditLog from "./pages/AdminAuditLog";
 import HighRiskStudents from "./pages/HighRiskStudents";
+import PhysicalPaymentsPortal from "./pages/PhysicalPaymentsPortal";
 
 const MANAGEMENT_ROLES = ["SystemAdmin", "BranchAdmin"];
 
@@ -171,6 +171,22 @@ export default function App() {
             }
           />
           <Route
+            path="/counter-payments"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <PhysicalPaymentsPortal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/physical-payments"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <PhysicalPaymentsPortal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/teachers"
             element={
               <ProtectedRoute roles={MANAGEMENT_ROLES}>
@@ -213,13 +229,21 @@ export default function App() {
           <Route
             path="/settings"
             element={
-              <ProtectedRoute roles={["SystemAdmin"]}>
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
                 <SettingsManagement />
               </ProtectedRoute>
             }
           />
           <Route
             path="/teacher-revenues"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminTeacherRevenues />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/class-revenue"
             element={
               <ProtectedRoute roles={MANAGEMENT_ROLES}>
                 <AdminTeacherRevenues />
@@ -251,6 +275,14 @@ export default function App() {
             }
           />
           <Route
+            path="/schedule-requests"
+            element={
+              <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                <AdminScheduleRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/risk-students"
             element={
               <ProtectedRoute roles={MANAGEMENT_ROLES}>
@@ -260,11 +292,7 @@ export default function App() {
           />
           <Route
             path="/audit-log"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminAuditLog />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin" replace />}
           />
           <Route
             path="/student/payments"

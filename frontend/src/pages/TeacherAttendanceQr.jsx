@@ -172,7 +172,7 @@ export default function TeacherAttendanceQr() {
               <button
                 onClick={handleCreateSession}
                 disabled={busy}
-                className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full disabled:opacity-50"
+                className="bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-xl px-4 py-2.5 text-xs font-bold w-full transition shadow-xs cursor-pointer disabled:opacity-50"
               >
                 Generate QR &amp; Open Session
               </button>

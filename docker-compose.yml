@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: "Server=mysql;Database=${DB_NAME};User=root;Password=${DB_ROOT_PASSWORD};"
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: csmas

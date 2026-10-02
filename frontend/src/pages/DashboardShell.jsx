@@ -1,239 +1,381 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation, NavLink } from "react-router-dom";
-import { Menu, Bell, ChevronDown, LogOut, Search } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate, useLocation, NavLink, Link } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  CalendarCheck,
+  Wallet,
+  TrendingUp,
+  ShieldAlert,
+  CalendarClock,
+  Megaphone,
+  Bell,
+  Settings as SettingsIcon,
+  LogOut,
+  Search,
+  PanelLeft,
+  ChevronDown,
+  HelpCircle,
+  CreditCard,
+  Building2,
+  ScrollText,
+  SlidersHorizontal,
+  Target,
+  Radio,
+  ShieldCheck,
+  Layers,
+  MessageSquare,
+  GraduationCap,
+  Receipt,
+  ClipboardCheck,
+  Banknote,
+} from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
-import { navItemsForRole } from "../navConfig";
 
 function initials(name) {
-  if (!name) return "?";
+  if (!name) return "FM";
   return name
     .split(" ")
+    .filter(Boolean)
     .map((p) => p[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 }
 
-function isGroupActive(group, pathname) {
-  return group.items.some((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
-}
-
-export default function DashboardShell({ title, children }) {
+export default function DashboardShell({ title, subtitle, children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const navItems = navItemsForRole(user?.role);
+  const isSystemAdmin = user?.role === "SystemAdmin";
+  const isBranchAdmin = user?.role === "BranchAdmin";
+  const isTeacher = user?.role === "Teacher";
+  const isParent = user?.role === "Parent";
+  const isStudent = user?.role === "Student";
 
-  // Whichever category the current page belongs to stays open automatically — someone landing on
-  // "Register Student" via a direct link should immediately see it nested under "Students", not
-  // have to go hunting for the right category first.
-  useEffect(() => {
-    const activeGroup = navItems.find((entry) => entry.items && isGroupActive(entry, location.pathname));
-    if (activeGroup) {
-      setExpandedGroups((prev) => (prev.has(activeGroup.label) ? prev : new Set(prev).add(activeGroup.label)));
+  // Comprehensive Categorized Navigation covering all backend sub-pages
+  const navSections = useMemo(() => {
+    if (isTeacher) {
+      return [
+        {
+          title: "TEACHER PORTAL",
+          items: [
+            { label: "Dashboard", path: "/teacher", icon: LayoutDashboard },
+            { label: "Live Attendance QR", path: "/teacher/attendance-qr", icon: CalendarCheck },
+            { label: "Weekly Timetable", path: "/teacher/timetable", icon: CalendarClock },
+            { label: "Bank Details", path: "/teacher/bank-details", icon: Wallet },
+          ],
+        },
+      ];
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
 
-  function toggleGroup(label) {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      return next;
-    });
-  }
+    if (isParent) {
+      return [
+        {
+          title: "PARENT PORTAL",
+          items: [
+            { label: "Student Dashboard", path: "/portal", icon: LayoutDashboard },
+            { label: "Online Payments", path: "/portal/payments", icon: CreditCard },
+          ],
+        },
+      ];
+    }
+
+    if (isStudent) {
+      return [
+        {
+          title: "STUDENT PORTAL",
+          items: [
+            { label: "My Dashboard", path: "/student", icon: LayoutDashboard },
+            { label: "Payment Portal", path: "/student/payments", icon: CreditCard },
+          ],
+        },
+      ];
+    }
+
+    // SystemAdmin & BranchAdmin (Management Roles)
+    return [
+      {
+        title: "OVERVIEW",
+        items: [
+          { label: "Dashboard", path: isBranchAdmin ? "/branch" : "/admin", icon: LayoutDashboard },
+        ],
+      },
+      {
+        title: "ACADEMICS",
+        items: [
+          { label: "Students", path: "/students", icon: Users },
+          { label: "Teachers", path: "/teachers", icon: GraduationCap },
+          { label: "Classes & Batches", path: "/classes", icon: BookOpen },
+          { label: "Weekly Timetable", path: "/timetable", icon: CalendarClock },
+          { label: "Attendance Reports", path: "/attendance", icon: CalendarCheck },
+          { label: "AI Risk Engine", path: "/risk-students", icon: ShieldAlert, highlight: true },
+        ],
+      },
+      {
+        title: "FINANCE & BILLING",
+        items: [
+          { label: "Fee Management", path: "/fees", icon: Wallet },
+          { label: "Counter Payments (Cash)", path: "/counter-payments", icon: Banknote },
+          { label: "Class Revenue", path: "/class-revenue", icon: TrendingUp },
+          ...(isSystemAdmin
+            ? [
+                { label: "Teacher Earnings", path: "/teacher-revenues", icon: Receipt },
+                { label: "Schedule Requests", path: "/schedule-requests", icon: ClipboardCheck },
+              ]
+            : []),
+        ],
+      },
+      {
+        title: "COMMUNICATION",
+        items: [
+          { label: "Announcements", path: "/announcements", icon: Megaphone },
+          { label: "Notifications", path: "/notifications", icon: Bell },
+        ],
+      },
+      {
+        title: "SYSTEM",
+        items: [
+          ...(isSystemAdmin ? [{ label: "Campus Branches", path: "/branches", icon: Building2 }] : []),
+          ...(isSystemAdmin ? [{ label: "Settings", path: "/settings", icon: SettingsIcon }] : []),
+        ],
+      },
+    ];
+  }, [isSystemAdmin, isBranchAdmin, isTeacher, isParent, isStudent]);
 
   async function handleLogout() {
     await logout();
     navigate("/login", { replace: true });
   }
 
-  function toggleSidebar() {
-    // One button serves both layouts: on mobile it opens/closes the off-canvas drawer; on
-    // desktop (where the drawer classes have no visual effect) it toggles icon-only collapse.
-    setCollapsed((v) => !v);
-    setMobileOpen((v) => !v);
-  }
+  const isCurrentActive = (path) => {
+    if (path === "/admin" || path === "/branch" || path === "/teacher" || path === "/portal" || path === "/student") {
+      return location.pathname === path;
+    }
+    return location.pathname === path || (path !== "/" && location.pathname.startsWith(`${path}/`));
+  };
 
   return (
-    <div className="h-screen flex bg-[#eef2ec] overflow-hidden">
+    <div className="h-screen w-screen overflow-hidden flex bg-[#F4F7F6] text-[#1A2D2A] font-sans antialiased selection:bg-[#C2E5DE] selection:text-[#062423]">
+      {/* Mobile Drawer Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          className="fixed inset-0 bg-[#062423]/60 backdrop-blur-xs z-30 md:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
       )}
 
+      {/* =========================================================================
+          LEFT SIDEBAR: Permanently Static / Fixed Deep Dark Spruce Green
+          ========================================================================= */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-30 h-full bg-white border-r border-slate-200/80 flex flex-col transition-all duration-200 w-64 ${
-          collapsed ? "md:w-[76px]" : "md:w-64"
-        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed md:sticky top-0 inset-y-0 left-0 z-40 h-screen bg-[#062423] text-white flex flex-col justify-between transition-all duration-200 select-none w-64 shrink-0 ${
+          mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
+        }`}
       >
-        <div className="flex items-center gap-3 px-4 h-16 shrink-0">
-          <div className="h-9 w-9 rounded-xl bg-[#122a1e] text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
-            CS
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Logo Brand Header with Premium Enterprise Status Badge */}
+          <div className="flex flex-col px-5 py-4 shrink-0 border-b border-[#0A2E2B]/80 gap-2.5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-[#00A389] to-[#10B981] flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M15 6a9 9 0 1 0 0 12" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-black text-lg text-white tracking-tight leading-none block">CSMAS</span>
+                <span className="text-[10px] text-[#719891] font-semibold leading-none block mt-1 uppercase tracking-wider">
+                  Tuition Institute
+                </span>
+              </div>
+            </div>
+
+            {/* Glowing System Status Indicator */}
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#0E4940]/80 border border-[#145C51] text-[10px] font-extrabold text-emerald-300 w-fit">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>PREMIUM ENTERPRISE</span>
+            </div>
           </div>
-          {!collapsed && <span className="font-semibold text-slate-900 whitespace-nowrap md:inline">CSMAS</span>}
-        </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-          {navItems.map((entry) =>
-            entry.items ? (
-              <div key={entry.label}>
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(entry.label)}
-                  title={collapsed ? entry.label : undefined}
-                  aria-expanded={expandedGroups.has(entry.label)}
-                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-slate-100 ${
-                    isGroupActive(entry, location.pathname) ? "text-slate-900" : "text-slate-500"
-                  }`}
-                >
-                  <entry.icon size={18} className="shrink-0" />
-                  {/* Always show the label on mobile (drawer is full-width there regardless of
-                      "collapsed", which only affects the desktop icon-only rail). */}
-                  <span className={`flex-1 text-left truncate ${collapsed ? "md:hidden" : ""}`}>{entry.label}</span>
-                  <ChevronDown
-                    size={16}
-                    className={`shrink-0 transition-transform ${expandedGroups.has(entry.label) ? "rotate-180" : ""} ${
-                      collapsed ? "md:hidden" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Animated to an intrinsic height via the 0fr/1fr grid-row trick (rather than a
-                    fixed max-height guess) so a category with more items doesn't get clipped —
-                    the child stays in the DOM either way, just collapsed to zero height, which is
-                    what makes the height transition animatable at all. */}
-                <div
-                  className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-                  style={{ gridTemplateRows: expandedGroups.has(entry.label) ? "1fr" : "0fr" }}
-                >
-                  <div className="overflow-hidden">
-                    <div className="mt-1 ml-4 pl-3 border-l border-slate-200 space-y-1 pb-0.5">
-                      {entry.items.map((item) => (
-                        <NavLink
-                          key={item.path}
-                          to={item.path}
-                          end={item.end}
-                          title={collapsed ? item.label : undefined}
-                          tabIndex={expandedGroups.has(entry.label) ? undefined : -1}
-                          onClick={() => setMobileOpen(false)}
-                          className={({ isActive }) =>
-                            `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                              isActive
-                                ? "bg-[#122a1e] text-white shadow-sm"
-                                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                            }`
-                          }
-                        >
-                          <item.icon size={16} className="shrink-0" />
-                          <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>{item.label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
+          {/* Categorized Navigation Links with smooth scroll */}
+          <nav className="flex-1 overflow-y-auto px-3.5 py-3 space-y-4">
+            {navSections.map((section, sIdx) => (
+              <div key={sIdx} className="space-y-1">
+                {section.title && (
+                  <p className="px-3 pt-1 pb-1 text-[10px] font-extrabold tracking-widest text-[#5C857E] uppercase select-none">
+                    {section.title}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const active = isCurrentActive(item.path);
+                    return (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                          active
+                            ? "bg-gradient-to-r from-[#0E4940] to-[#0A3731] text-emerald-300 font-bold shadow-xs border-l-2 border-emerald-400"
+                            : "text-[#8FAFA9] hover:text-white hover:bg-[#0A2E2B]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <item.icon size={16} className={active ? "text-emerald-300" : "text-[#759E97]"} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.highlight && (
+                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        )}
+                      </NavLink>
+                    );
+                  })}
                 </div>
               </div>
-            ) : (
-              <NavLink
-                key={entry.path}
-                to={entry.path}
-                end={entry.end}
-                title={collapsed ? entry.label : undefined}
-                onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                    isActive ? "bg-[#122a1e] text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                  }`
-                }
-              >
-                <entry.icon size={18} className="shrink-0" />
-                <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>{entry.label}</span>
-              </NavLink>
-            )
-          )}
-        </nav>
+            ))}
+          </nav>
+        </div>
 
-        <div className="p-3 border-t border-slate-100">
+        {/* Bottom Sidebar Utility Actions */}
+        <div className="p-4 border-t border-[#0C3230] space-y-1 shrink-0">
+          {isSystemAdmin && (
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-xs font-medium transition ${
+                  isActive ? "bg-[#0E4940] text-emerald-300" : "text-[#8FAFA9] hover:text-white hover:bg-[#0A2E2B]"
+                }`
+              }
+            >
+              <SettingsIcon size={16} className="text-[#759E97]" />
+              <span>Settings</span>
+            </NavLink>
+          )}
+
+          <button
+            type="button"
+            onClick={() =>
+              alert(
+                "CSMAS Tuition Institute Enterprise Support\n\n• Hotline: +94 11 234 5678\n• Email: support@csmas.lk\n• Colombo & Kandy Branch Desks Online"
+              )
+            }
+            className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-xs font-medium text-[#8FAFA9] hover:text-white hover:bg-[#0A2E2B] transition cursor-pointer text-left"
+          >
+            <HelpCircle size={16} className="text-[#759E97]" />
+            <span>Support &amp; Help</span>
+          </button>
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-red-600 transition"
+            className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-xs font-medium text-[#8FAFA9] hover:text-red-400 hover:bg-[#0A2E2B] transition cursor-pointer"
           >
-            <LogOut size={18} className="shrink-0" />
-            <span className={collapsed ? "md:hidden" : ""}>Log out</span>
+            <LogOut size={16} className="text-[#759E97]" />
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white/70 backdrop-blur border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 shrink-0">
-          <div className="flex items-center gap-3 text-slate-900 min-w-0">
+      {/* =========================================================================
+          MAIN APPLICATION AREA (Fixed Header + Scrollable Page Canvas)
+          ========================================================================= */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 bg-[#F4F7F6] overflow-hidden">
+        {/* Top Header: Permanently Fixed / Static at the top */}
+        <header className="h-20 px-6 sm:px-8 flex items-center justify-between shrink-0 bg-[#F4F7F6]/95 backdrop-blur-xs border-b border-[#E3EBE8]/70 z-20 shadow-2xs">
+          {/* Left: User Avatar & Bold Full Name (Floyd Miles style) */}
+          <div className="flex items-center gap-3.5">
             <button
-              onClick={toggleSidebar}
-              aria-label="Toggle sidebar"
-              className="p-2 rounded-md hover:bg-slate-100 transition"
+              onClick={() => setMobileOpen(true)}
+              className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-200"
+              aria-label="Open navigation"
             >
-              <Menu size={20} />
+              <PanelLeft size={20} />
             </button>
-            <h1 className="text-lg font-semibold truncate">{title}</h1>
+
+            {/* Circular Avatar Badge with photo aesthetic */}
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full bg-[#0E4940] text-emerald-300 font-bold flex items-center justify-center text-sm shadow-xs border-2 border-white">
+                {initials(user?.fullName)}
+              </div>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-[#1A2D2A] tracking-tight leading-tight">
+                  {user?.fullName || "Floyd Miles"}
+                </h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100/90 text-[#093C35] text-[10px] font-extrabold uppercase tracking-wider border border-emerald-300/60 shadow-2xs">
+                  {user?.role || "System Admin"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-[#718A85] font-medium">
+                <span>{user?.instituteName || "Colombo Tuition Institute"}</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-emerald-700 font-semibold">{user?.branchName || "Main Campus"}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              aria-label="Search"
-              className="hidden sm:flex p-2.5 rounded-full hover:bg-slate-100 text-slate-500 transition"
-            >
-              <Search size={18} />
-            </button>
-            <button
-              aria-label="Notifications"
-              className="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 transition relative"
-            >
-              <Bell size={18} />
-            </button>
-
-            <div className="relative">
-              <button
-                onClick={() => setMenuOpen((v) => !v)}
-                className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-slate-100 transition text-slate-700"
-              >
-                <span className="h-8 w-8 rounded-full bg-[#122a1e] text-emerald-400 flex items-center justify-center text-xs font-semibold">
-                  {initials(user?.fullName)}
-                </span>
-                <span className="hidden sm:block text-sm font-medium">{user?.fullName}</span>
-                <ChevronDown size={16} />
-              </button>
-
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-20 text-slate-700">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-sm font-medium">{user?.fullName}</p>
-                    <p className="text-xs text-slate-500">
-                      {user?.role}
-                      {user?.instituteName ? ` · ${user.instituteName}` : ""}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-                  >
-                    <LogOut size={16} /> Sign out
-                  </button>
-                </div>
-              )}
+          {/* Right: Search Input + Term Pill + Notification Bell + Settings Cog */}
+          <div className="flex items-center gap-3">
+            {/* Academic Session / Live Status Pill */}
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white border border-[#E3EBE8] text-xs font-semibold text-slate-600 shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[11px] text-[#1A2D2A] font-bold tracking-tight">Academic Year 2026</span>
             </div>
+
+            {/* Pill Search Input matching premium enterprise aesthetics */}
+            <div className="hidden sm:flex items-center justify-between gap-2 bg-white/95 border border-[#DCE6E2] rounded-2xl px-3.5 py-2 w-64 text-xs text-slate-500 shadow-2xs focus-within:border-[#00A389] focus-within:ring-2 focus-within:ring-[#00A389]/15 transition">
+              <div className="flex items-center gap-2 flex-1">
+                <Search size={15} className="text-[#8DAAA5]" />
+                <input
+                  type="text"
+                  placeholder="Quick search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-xs text-[#1A2D2A] placeholder-[#8DAAA5] w-full"
+                />
+              </div>
+              <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 rounded border border-slate-200 select-none">
+                ⌘K
+              </kbd>
+            </div>
+
+            {/* Notification Bell in rounded card */}
+            <Link
+              to="/notifications"
+              className="h-9 w-9 rounded-2xl bg-white border border-[#E3EBE8] flex items-center justify-center text-[#55736E] hover:text-[#00A389] hover:bg-emerald-50 transition shadow-2xs relative"
+              aria-label="Notifications"
+            >
+              <Bell size={16} />
+              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#00A389]" />
+            </Link>
+
+            {/* Settings Cog Button */}
+            <Link
+              to="/settings"
+              className="h-9 w-9 rounded-2xl bg-white border border-[#E3EBE8] flex items-center justify-center text-[#55736E] hover:text-[#00A389] hover:bg-emerald-50 transition shadow-2xs"
+              aria-label="Settings"
+            >
+              <SettingsIcon size={16} />
+            </Link>
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto overflow-y-auto overflow-x-hidden">{children}</main>
+        {/* Dashboard Content Canvas: Only this container scrolls down */}
+        <main className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 pb-12 max-w-[1550px] w-full mx-auto">
+          {children}
+        </main>
       </div>
     </div>
   );

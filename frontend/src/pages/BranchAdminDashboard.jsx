@@ -1,18 +1,14 @@
-import { Link } from "react-router-dom";
 import DashboardShell from "./DashboardShell";
 import DashboardKpis from "./DashboardKpis";
 
 export default function BranchAdminDashboard() {
   return (
-    <DashboardShell title="Branch Admin Dashboard">
-      <DashboardKpis scopeLabel="your branch" />
-
-      <p className="text-slate-600 text-sm mt-6">
-        <Link to="/students/new" className="text-emerald-700 underline">
-          Register a student
-        </Link>{" "}
-        or use the sidebar to manage classes, teachers, timetable, fees, and announcements.
-      </p>
+    <DashboardShell title="Branch Operations Dashboard">
+      <DashboardKpis
+        scopeLabel="Branch Scope"
+        dashboardTitle="Branch Operations Dashboard"
+        dashboardSubtitle="Real-time attendance verification, student enrollments, and branch campus operations"
+      />
     </DashboardShell>
   );
 }

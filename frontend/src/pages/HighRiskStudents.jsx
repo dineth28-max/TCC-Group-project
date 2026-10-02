@@ -6,11 +6,12 @@ import { listStudents } from "../api/students";
 import { listBranches } from "../api/branches";
 import { listClasses } from "../api/classes";
 import { useAuth } from "../auth/AuthContext";
+import { ShieldAlert, Search, Sparkles, AlertTriangle, CheckCircle2, ChevronRight, Activity } from "lucide-react";
 
 const LEVEL_STYLES = {
-  High: "bg-red-100 text-red-700",
-  Medium: "bg-amber-100 text-amber-700",
-  Low: "bg-green-100 text-green-700",
+  High: "bg-red-50 text-red-700 border-red-200",
+  Medium: "bg-amber-50 text-amber-700 border-amber-200",
+  Low: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 export default function HighRiskStudents() {
@@ -62,7 +63,7 @@ export default function HighRiskStudents() {
     } catch (err) {
       setLookupError(
         err?.response?.status === 503
-          ? "The AI service is unavailable right now — try again shortly."
+          ? "The AI service is currently warming up or unavailable — try again shortly."
           : "Could not run a prediction for this student."
       );
     } finally {
@@ -81,7 +82,7 @@ export default function HighRiskStudents() {
       const data = await listRiskStudents(params);
       setStudents(data);
     } catch {
-      setError("Could not load high-risk students.");
+      setError("Could not load high risk students registry.");
     } finally {
       setLoading(false);
     }
@@ -122,41 +123,66 @@ export default function HighRiskStudents() {
 
   return (
     <DashboardShell title="High-Risk Students">
-      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4 mb-6">
-        <h3 className="font-semibold text-slate-800 mb-2 text-sm">Look up a student and run a prediction now</h3>
-        <div className="flex gap-2 mb-3">
-          <input
-            value={lookupQuery}
-            onChange={(e) => setLookupQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-            placeholder="Type a student name or student ID…"
-            className="border border-slate-300 rounded px-3 py-2 text-sm w-80"
-          />
+      {/* Title & Description */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">AI Academic Risk Engine</h1>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#2457FF] text-white">
+            Predictive AI
+          </span>
+        </div>
+        <p className="text-xs text-slate-500 mt-1">
+          Machine-learning powered dropout & attendance risk scoring to enable early proactive interventions
+        </p>
+      </div>
+
+      {/* Student Lookup & Interactive Prediction Card */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={16} className="text-[#2457FF]" />
+          <h3 className="font-bold text-slate-900 text-sm">On-Demand Student Risk Prediction</h3>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2.5 mb-3">
+          <div className="relative flex-1 max-w-md">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={lookupQuery}
+              onChange={(e) => setLookupQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+              placeholder="Search by student name or code (e.g. Saman)..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:bg-white focus:border-[#2457FF] outline-none transition"
+            />
+          </div>
           <button
             onClick={handleLookup}
             disabled={lookupLoading}
-            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm rounded px-4"
+            className="bg-[#2457FF] hover:bg-[#1b45db] disabled:opacity-50 text-white text-xs font-semibold rounded-xl px-4 py-2 transition shadow-xs cursor-pointer"
           >
-            {lookupLoading ? "Searching…" : "Search"}
+            {lookupLoading ? "Searching..." : "Find Student"}
           </button>
         </div>
 
-        {lookupError && <p className="text-red-600 text-sm mb-2">{lookupError}</p>}
+        {lookupError && (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-3">
+            {lookupError}
+          </p>
+        )}
 
         {lookupResults.length > 0 && (
-          <ul className="divide-y divide-slate-100 border border-slate-100 rounded mb-3">
+          <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden mb-3">
             {lookupResults.map((s) => (
-              <li key={s.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                <span>
-                  <span className="font-mono text-xs text-slate-500 mr-2">{s.studentCode}</span>
+              <li key={s.id} className="flex items-center justify-between px-4 py-2.5 text-xs hover:bg-slate-50 transition">
+                <span className="font-medium text-slate-800">
+                  <span className="font-mono text-slate-400 mr-2">{s.studentCode}</span>
                   {s.fullName}
                 </span>
                 <button
                   onClick={() => handlePredict(s.id)}
                   disabled={predictingId === s.id}
-                  className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded px-3 py-1 text-xs hover:bg-emerald-100 disabled:opacity-50"
+                  className="bg-blue-50 text-[#2457FF] hover:bg-blue-100 border border-blue-200 rounded-lg px-3 py-1 font-semibold text-xs transition disabled:opacity-50 cursor-pointer"
                 >
-                  {predictingId === s.id ? "Predicting…" : "Run Prediction"}
+                  {predictingId === s.id ? "Scoring..." : "Run AI Prediction"}
                 </button>
               </li>
             ))}
@@ -164,30 +190,34 @@ export default function HighRiskStudents() {
         )}
 
         {predictionResult && (
-          <div className="border border-emerald-200 bg-emerald-50/50 rounded p-3 text-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium">{predictionResult.fullName}</span>
-              <span className={`px-2 py-0.5 rounded text-xs ${LEVEL_STYLES[predictionResult.riskLevel] || "bg-slate-200 text-slate-600"}`}>
-                {predictionResult.riskLevel} — {predictionResult.score}
+          <div className="border border-blue-100 bg-blue-50/50 rounded-2xl p-4 text-xs mt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-sm text-slate-900">{predictionResult.fullName}</span>
+              <span className={`px-2.5 py-0.5 rounded-full font-bold border ${LEVEL_STYLES[predictionResult.riskLevel] || "bg-slate-100 text-slate-700"}`}>
+                {predictionResult.riskLevel} Risk (Score: {predictionResult.score})
               </span>
             </div>
-            <ul className="list-disc list-inside text-slate-600 space-y-0.5">
+            <p className="font-semibold text-slate-600 mb-1">Key Contributing Risk Factors:</p>
+            <ul className="list-disc list-inside text-slate-600 space-y-0.5 pl-1">
               {predictionResult.topFactors.map((f, i) => <li key={i}>{f}</li>)}
             </ul>
-            <p className="text-xs text-slate-400 mt-1">Computed {new Date(predictionResult.computedAt).toLocaleString()}</p>
+            <p className="text-[11px] text-slate-400 mt-2">
+              Computed: {new Date(predictionResult.computedAt).toLocaleString()}
+            </p>
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-2">
+      {/* Filters & Class Batch Predict */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 mb-6 flex flex-wrap items-center gap-3">
         {user?.role === "SystemAdmin" && (
           <select
             value={branchId}
             onChange={(e) => {
               setBranchId(e.target.value);
-              setClassId(""); // a class from the old branch may not exist in the new one
+              setClassId("");
             }}
-            className="border border-slate-300 rounded px-3 py-2 text-sm"
+            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white outline-none"
           >
             <option value="">All branches</option>
             {branches.map((b) => (
@@ -198,7 +228,7 @@ export default function HighRiskStudents() {
         <select
           value={classId}
           onChange={(e) => setClassId(e.target.value)}
-          className="border border-slate-300 rounded px-3 py-2 text-sm"
+          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white outline-none"
         >
           <option value="">All classes</option>
           {classes.map((c) => (
@@ -208,80 +238,85 @@ export default function HighRiskStudents() {
         <select
           value={riskLevel}
           onChange={(e) => setRiskLevel(e.target.value)}
-          className="border border-slate-300 rounded px-3 py-2 text-sm"
+          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white outline-none"
         >
           <option value="">All risk levels</option>
           <option value="High">High</option>
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
+
         <button
           onClick={handlePredictClass}
           disabled={!classId || classPredicting}
-          title={!classId ? "Select a class first" : undefined}
-          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded px-4 py-2"
+          className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl px-4 py-2 transition ml-auto cursor-pointer"
         >
-          {classPredicting ? "Predicting class…" : "Predict Entire Class"}
+          {classPredicting ? "Scoring class..." : "Predict Entire Class"}
         </button>
       </div>
 
-      {classPredictError && <p className="text-red-600 text-sm mb-3">{classPredictError}</p>}
-      {classPredictSummary && (
-        <p className="text-sm text-slate-600 mb-3">
-          Ran the model for every student in <strong>{classPredictSummary.subject}</strong>:{" "}
-          <span className="text-green-700">{classPredictSummary.succeeded} scored</span>
-          {classPredictSummary.failed > 0 && (
-            <span className="text-red-600"> · {classPredictSummary.failed} failed (AI service unavailable)</span>
-          )}
-          {" "}out of {classPredictSummary.totalStudents} enrolled.
-        </p>
+      {classPredictError && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          {classPredictError}
+        </div>
       )}
 
-      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+      {classPredictSummary && (
+        <div className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 mb-4">
+          Analyzed class <strong>{classPredictSummary.subject}</strong>: {classPredictSummary.succeeded} scored successfully out of {classPredictSummary.totalStudents} enrolled.
+        </div>
+      )}
+
+      {/* Scored Students Table */}
       {loading ? (
-        <p className="text-slate-500 text-sm">Loading…</p>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
+          Loading risk scores...
+        </div>
       ) : students.length === 0 ? (
-        <p className="text-slate-500 text-sm">No scored students yet — scores appear as attendance and payment events happen.</p>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
+          No scored students yet. Scores update as attendance and payment records are captured.
+        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-emerald-50 text-slate-600 text-left">
-              <tr>
-                <th className="px-4 py-2">Student Code</th>
-                <th className="px-4 py-2">Name</th>
-                <th className="px-4 py-2">Branch</th>
-                <th className="px-4 py-2">Score</th>
-                <th className="px-4 py-2">Risk Level</th>
-                <th className="px-4 py-2">Top Factors</th>
-                <th className="px-4 py-2">Last Computed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.studentId} className="border-t border-slate-100 align-top">
-                  <td className="px-4 py-2 font-mono text-xs">{s.studentCode}</td>
-                  <td className="px-4 py-2">
-                    <Link to={`/students/${s.studentId}`} className="text-emerald-700 hover:underline">
-                      {s.fullName}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2">{s.branchName}</td>
-                  <td className="px-4 py-2">{s.score}</td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-0.5 rounded text-xs ${LEVEL_STYLES[s.riskLevel] || "bg-slate-200 text-slate-600"}`}>
-                      {s.riskLevel}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-slate-600">
-                    <ul className="list-disc list-inside space-y-0.5">
-                      {s.topFactors.map((f, i) => <li key={i}>{f}</li>)}
-                    </ul>
-                  </td>
-                  <td className="px-4 py-2 text-xs text-slate-500">{new Date(s.computedAt).toLocaleString()}</td>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60 text-[12px] font-semibold text-slate-500">
+                  <th className="py-3 px-5">Student</th>
+                  <th className="py-3 px-5">Branch</th>
+                  <th className="py-3 px-5">Risk Level</th>
+                  <th className="py-3 px-5">Score</th>
+                  <th className="py-3 px-5">Top Influencing Factors</th>
+                  <th className="py-3 px-5 text-right">Computed</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {students.map((s) => (
+                  <tr key={s.studentId} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-5">
+                      <div className="font-semibold text-slate-900 text-xs">{s.fullName}</div>
+                      <div className="font-mono text-[11px] text-slate-400 mt-0.5">{s.studentCode}</div>
+                    </td>
+                    <td className="py-3.5 px-5 text-xs text-slate-600 font-medium">{s.branchName}</td>
+                    <td className="py-3.5 px-5">
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${LEVEL_STYLES[s.riskLevel] || "bg-slate-100 text-slate-700"}`}>
+                        {s.riskLevel}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-5 font-mono text-xs font-bold text-slate-800">{s.score}</td>
+                    <td className="py-3.5 px-5 text-xs text-slate-600 max-w-xs">
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {s.topFactors.map((f, i) => <li key={i} className="truncate">{f}</li>)}
+                      </ul>
+                    </td>
+                    <td className="py-3.5 px-5 text-right text-[11px] text-slate-400">
+                      {new Date(s.computedAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </DashboardShell>

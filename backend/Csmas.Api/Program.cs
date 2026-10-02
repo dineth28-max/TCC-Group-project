@@ -96,12 +96,16 @@ builder.Services.AddAuthentication(options =>
     });
 builder.Services.AddAuthorization();
 
-// ---- CORS (frontend origin only) ----
-var frontendOrigin = builder.Configuration["FrontendOrigin"] ?? "http://localhost";
+// ---- CORS (frontend origins) ----
+var rawFrontendOrigin = builder.Configuration["FrontendOrigin"] ?? "http://localhost";
+var origins = rawFrontendOrigin.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+if (!origins.Contains("http://localhost")) origins.Add("http://localhost");
+if (!origins.Contains("http://localhost:3000")) origins.Add("http://localhost:3000");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
-        policy.WithOrigins(frontendOrigin)
+        policy.WithOrigins(origins.ToArray())
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials());
@@ -158,11 +162,8 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedAsync(db, passwordHasher);
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // ---- Global exception handling: never let a raw stack trace/exception message reach the
 // client, regardless of ASPNETCORE_ENVIRONMENT — log the real exception server-side, return a

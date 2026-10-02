@@ -16,7 +16,7 @@ namespace Csmas.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/settings")]
-[Authorize(Roles = "SystemAdmin")]
+[Authorize(Roles = "SystemAdmin,BranchAdmin")]
 public class SettingsController : TenantScopedController
 {
     private readonly AppDbContext _db;
@@ -38,6 +38,7 @@ public class SettingsController : TenantScopedController
     }
 
     [HttpPut]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<ActionResult<InstituteSettingsResponse>> Update([FromBody] UpdateInstituteSettingsRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -62,6 +63,7 @@ public class SettingsController : TenantScopedController
     }
 
     [HttpGet("payment-account")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<ActionResult<PaymentAccountResponse>> GetPaymentAccount()
     {
         var account = await _db.PaymentAccountSettings.FirstOrDefaultAsync(p => p.InstituteId == CurrentInstituteId);
@@ -69,6 +71,7 @@ public class SettingsController : TenantScopedController
     }
 
     [HttpPut("payment-account")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<ActionResult<PaymentAccountResponse>> UpdatePaymentAccount([FromBody] UpdatePaymentAccountRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.GatewayProvider))
@@ -99,6 +102,7 @@ public class SettingsController : TenantScopedController
     }
 
     [HttpGet("revenue-split")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<ActionResult<RevenueSplitResponse>> GetRevenueSplit()
     {
         var split = await _db.RevenueSplitSettings.FirstOrDefaultAsync(r => r.InstituteId == CurrentInstituteId);
@@ -106,6 +110,7 @@ public class SettingsController : TenantScopedController
     }
 
     [HttpPut("revenue-split")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<ActionResult<RevenueSplitResponse>> UpdateRevenueSplit([FromBody] UpdateRevenueSplitRequest request)
     {
         if (request.CommissionPercent < 0 || request.CommissionPercent > 100)
@@ -139,6 +144,7 @@ public class SettingsController : TenantScopedController
     }
 
     [HttpPut("institute-bank-details")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<ActionResult<InstituteBankDetailResponse>> SaveInstituteBankDetails([FromBody] SaveInstituteBankDetailRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.AccountHolderName) || string.IsNullOrWhiteSpace(request.BankName) || string.IsNullOrWhiteSpace(request.AccountNumber))

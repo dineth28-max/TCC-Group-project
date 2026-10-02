@@ -86,8 +86,11 @@ export default function AnnouncementsManagement() {
                 className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
               />
             </div>
-            <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full">
-              Post
+            <button
+              type="submit"
+              className="bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-xl px-4 py-2.5 text-xs font-bold w-full transition shadow-xs cursor-pointer"
+            >
+              Broadcast Announcement
             </button>
           </form>
         </div>

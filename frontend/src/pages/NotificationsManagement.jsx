@@ -73,8 +73,11 @@ export default function NotificationsManagement() {
                       rows={3}
                       placeholder="Body — use {StudentName}, {Subject}, {TotalDue}, {DueDate}, etc."
                     />
-                    <button onClick={() => handleSave(t.eventType)} className="bg-emerald-700 text-white rounded px-3 py-1 text-xs">
-                      Save
+                    <button
+                      onClick={() => handleSave(t.eventType)}
+                      className="bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
+                    >
+                      Save Template
                     </button>
                   </div>
                 ) : (

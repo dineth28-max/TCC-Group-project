@@ -168,11 +168,14 @@ export default function BranchesManagement() {
                 />
               </div>
               <div className="flex gap-2">
-                <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-2 text-sm flex-1">
-                  {editingId ? "Save Changes" : "Create"}
+                <button
+                  type="submit"
+                  className="bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-xl px-4 py-2 text-xs font-bold flex-1 transition shadow-xs cursor-pointer"
+                >
+                  {editingId ? "Save Changes" : "Create Branch"}
                 </button>
                 {editingId && (
-                  <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:underline">
+                  <button type="button" onClick={cancelEdit} className="text-xs text-slate-500 hover:underline px-3 py-2">
                     Cancel
                   </button>
                 )}

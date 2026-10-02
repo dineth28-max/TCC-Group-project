@@ -1,49 +1,66 @@
 import { useEffect, useState } from "react";
 import DashboardShell from "./DashboardShell";
 import { listAuditLog } from "../api/payments";
+import { ScrollText, ShieldCheck, User } from "lucide-react";
 
 export default function AdminAuditLog() {
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listAuditLog().then(setRows);
+    listAuditLog()
+      .then(setRows)
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <DashboardShell title="Audit Log">
-      <p className="text-slate-500 text-xs mb-4">
-        Who changed Payment Account, Revenue Split, Institute/Teacher Bank Details, or reset a password —
-        and when.
-      </p>
-      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-emerald-50 text-slate-600 text-left">
-            <tr>
-              <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Actor</th>
-              <th className="px-4 py-2">Action</th>
-              <th className="px-4 py-2">Target</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-4 py-4 text-slate-500 text-xs">
-                  No audited changes yet.
-                </td>
-              </tr>
-            ) : (
-              rows.map((r) => (
-                <tr key={r.id} className="border-t border-emerald-100">
-                  <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</td>
-                  <td className="px-4 py-2">{r.actorName}</td>
-                  <td className="px-4 py-2 text-xs font-mono">{r.action}</td>
-                  <td className="px-4 py-2 text-xs text-slate-500">{r.targetDescription ?? "—"}</td>
+    <DashboardShell title="System Audit Log">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Security & System Audit Log</h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Immutable trail of administrative configuration updates, payout modifications, banking alterations, and credential resets
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-xs text-slate-400">Loading audit records...</div>
+        ) : rows.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-400">No audited system actions recorded yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60 text-[12px] font-semibold text-slate-500">
+                  <th className="py-3 px-5">Timestamp</th>
+                  <th className="py-3 px-5">Actor / User</th>
+                  <th className="py-3 px-5">Security Action</th>
+                  <th className="py-3 px-5 text-right">Target Resource</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {rows.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-5 text-xs text-slate-500 font-mono whitespace-nowrap">
+                      {new Date(r.createdAt).toLocaleString()}
+                    </td>
+                    <td className="py-3.5 px-5 font-semibold text-xs text-slate-900">
+                      {r.actorName}
+                    </td>
+                    <td className="py-3.5 px-5">
+                      <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-50 text-[#2457FF] border border-blue-200/60">
+                        {r.action}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-5 text-right text-xs text-slate-600 font-medium">
+                      {r.targetDescription ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </DashboardShell>
   );

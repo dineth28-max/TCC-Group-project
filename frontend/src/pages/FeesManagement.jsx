@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import DashboardShell from "./DashboardShell";
 import { listClasses } from "../api/classes";
 import { listStudents } from "../api/students";
@@ -13,6 +14,7 @@ import {
   runBilling,
   getCollectionSummary,
 } from "../api/fees";
+import { Wallet, CreditCard, Play, Plus, Percent, CheckCircle, Clock, Banknote } from "lucide-react";
 
 const thisPeriod = () => {
   const now = new Date();
@@ -31,6 +33,7 @@ export default function FeesManagement() {
   const [payAmounts, setPayAmounts] = useState({});
   const [error, setError] = useState(null);
   const [billingResult, setBillingResult] = useState(null);
+  const [billingBusy, setBillingBusy] = useState(false);
 
   async function loadAll() {
     const [c, s, fs, d, inv, sum] = await Promise.all([
@@ -47,8 +50,8 @@ export default function FeesManagement() {
     setDiscounts(d);
     setInvoices(inv);
     setSummary(sum);
-    if (c.length > 0) setStructureForm((f) => ({ ...f, classId: String(c[0].id) }));
-    if (s.length > 0) setDiscountForm((f) => ({ ...f, studentId: String(s[0].id) }));
+    if (c.length > 0 && !structureForm.classId) setStructureForm((f) => ({ ...f, classId: String(c[0].id) }));
+    if (s.length > 0 && !discountForm.studentId) setDiscountForm((f) => ({ ...f, studentId: String(s[0].id) }));
   }
 
   useEffect(() => {
@@ -86,12 +89,15 @@ export default function FeesManagement() {
 
   async function handleRunBilling() {
     setError(null);
+    setBillingBusy(true);
     try {
       const result = await runBilling();
       setBillingResult(result);
       loadAll();
     } catch (err) {
       setError(err.response?.data?.message || "Billing run failed.");
+    } finally {
+      setBillingBusy(false);
     }
   }
 
@@ -116,44 +122,90 @@ export default function FeesManagement() {
     }
   }
 
+  const formatCurrency = (val) =>
+    `Rs ${Number(val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <DashboardShell title="Fee Management">
-      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+      {/* Page Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Fee Management &amp; Invoicing</h1>
+          <p className="text-xs text-slate-500 mt-1">Configure class tuition rates, apply scholarships, run automated billing, and log collections</p>
+        </div>
 
+        <Link
+          to="/counter-payments"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#0E483F] hover:bg-[#082C26] text-white text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto"
+        >
+          <Banknote size={16} />
+          <span>Physical Counter Payment Portal</span>
+        </Link>
+      </div>
+
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4">
-          <p className="text-xs text-slate-500">Collection Rate ({summary?.period})</p>
-          <p className="text-2xl font-semibold text-slate-800">{summary ? `${summary.collectionRatePercent}%` : "…"}</p>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Collection Rate ({summary?.period || thisPeriod()})
+          </p>
+          <p className="text-2xl font-bold text-slate-900 mt-2">
+            {summary ? `${summary.collectionRatePercent}%` : "…"}
+          </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4">
-          <p className="text-xs text-slate-500">Total Invoiced</p>
-          <p className="text-2xl font-semibold text-slate-800">{summary ? summary.totalInvoiced : "…"}</p>
+
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Invoiced</p>
+          <p className="text-2xl font-bold text-slate-900 mt-2">
+            {summary ? formatCurrency(summary.totalInvoiced) : "…"}
+          </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4">
-          <p className="text-xs text-slate-500">Total Collected</p>
-          <p className="text-2xl font-semibold text-slate-800">{summary ? summary.totalCollected : "…"}</p>
+
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Collected</p>
+          <p className="text-2xl font-bold text-[#2457FF] mt-2">
+            {summary ? formatCurrency(summary.totalCollected) : "…"}
+          </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-4 flex flex-col justify-between">
-          <button onClick={handleRunBilling} className="bg-emerald-700 text-white rounded px-3 py-1.5 text-sm">
-            Run Billing Now
+
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+          <button
+            onClick={handleRunBilling}
+            disabled={billingBusy}
+            className="w-full bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-xl py-2 px-3 text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <Play size={13} fill="currentColor" />
+            {billingBusy ? "Running Billing..." : "Run Monthly Billing"}
           </button>
           {billingResult && (
-            <p className="text-xs text-slate-500 mt-1">
-              {billingResult.invoicesCreated} invoices created for {billingResult.period}
+            <p className="text-[11px] text-emerald-700 font-semibold mt-2 text-center">
+              ✓ {billingResult.invoicesCreated} invoices generated for {billingResult.period}
             </p>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
-          <h2 className="font-semibold text-slate-800 mb-4">Fee Structures</h2>
+      {/* Fee Structures & Discounts Two-Column Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Fee Structures */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Wallet size={16} className="text-[#2457FF]" />
+            <h2 className="text-sm font-bold text-slate-900">Class Fee Structures</h2>
+          </div>
+
           <form onSubmit={handleCreateStructure} className="flex gap-2 mb-4">
             <select
               aria-label="Class"
               value={structureForm.classId}
               onChange={(e) => setStructureForm({ ...structureForm, classId: e.target.value })}
-              className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white outline-none"
             >
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -163,44 +215,59 @@ export default function FeesManagement() {
             </select>
             <input
               type="number"
-              placeholder="Amount"
+              placeholder="Amount (Rs)"
               required
               value={structureForm.amount}
               onChange={(e) => setStructureForm({ ...structureForm, amount: e.target.value })}
-              className="w-28 border border-slate-300 rounded px-2 py-1.5 text-sm"
+              className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white outline-none"
             />
-            <button type="submit" className="bg-emerald-700 text-white rounded px-3 py-1.5 text-sm">
-              Save
+            <button
+              type="submit"
+              className="bg-[#2457FF] hover:bg-[#1b45db] text-white font-bold rounded-xl px-4 py-1.5 text-xs transition cursor-pointer"
+            >
+              Save Rate
             </button>
           </form>
-          <table className="w-full text-sm">
-            <thead className="text-left text-slate-500">
-              <tr>
-                <th className="py-1.5">Subject</th>
-                <th className="py-1.5">Amount</th>
-                <th className="py-1.5">Active</th>
-              </tr>
-            </thead>
-            <tbody>
-              {structures.map((f) => (
-                <tr key={f.id} className="border-t border-slate-100">
-                  <td className="py-1.5">{f.subject}</td>
-                  <td className="py-1.5">{f.amount}</td>
-                  <td className="py-1.5">{f.isActive ? "Yes" : "No"}</td>
+
+          <div className="max-h-48 overflow-y-auto border border-slate-100 rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <tr>
+                  <th className="py-2.5 px-3">Subject Class</th>
+                  <th className="py-2.5 px-3">Rate</th>
+                  <th className="py-2.5 px-3 text-right">Active</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {structures.map((f) => (
+                  <tr key={f.id} className="hover:bg-slate-50">
+                    <td className="py-2.5 px-3 font-semibold text-slate-800">{f.subject}</td>
+                    <td className="py-2.5 px-3 text-slate-600 font-mono">{formatCurrency(f.amount)}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                        {f.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
-          <h2 className="font-semibold text-slate-800 mb-4">Discount Rules</h2>
+        {/* Discount Rules */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Percent size={16} className="text-[#2457FF]" />
+            <h2 className="text-sm font-bold text-slate-900">Scholarships & Discounts</h2>
+          </div>
+
           <form onSubmit={handleCreateDiscount} className="flex gap-2 mb-4">
             <select
               aria-label="Student"
               value={discountForm.studentId}
               onChange={(e) => setDiscountForm({ ...discountForm, studentId: e.target.value })}
-              className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white outline-none"
             >
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -212,7 +279,7 @@ export default function FeesManagement() {
               aria-label="Discount type"
               value={discountForm.type}
               onChange={(e) => setDiscountForm({ ...discountForm, type: e.target.value })}
-              className="border border-slate-300 rounded px-2 py-1.5 text-sm"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white outline-none"
             >
               <option value="Sibling">Sibling</option>
               <option value="Scholarship">Scholarship</option>
@@ -224,93 +291,129 @@ export default function FeesManagement() {
               required
               value={discountForm.percentOff}
               onChange={(e) => setDiscountForm({ ...discountForm, percentOff: e.target.value })}
-              className="w-20 border border-slate-300 rounded px-2 py-1.5 text-sm"
+              className="w-20 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white outline-none"
             />
-            <button type="submit" className="bg-emerald-700 text-white rounded px-3 py-1.5 text-sm">
-              Add
+            <button
+              type="submit"
+              className="bg-[#2457FF] hover:bg-[#1b45db] text-white font-bold rounded-xl px-4 py-1.5 text-xs transition cursor-pointer"
+            >
+              Apply
             </button>
           </form>
-          <table className="w-full text-sm">
-            <thead className="text-left text-slate-500">
-              <tr>
-                <th className="py-1.5">Student</th>
-                <th className="py-1.5">Type</th>
-                <th className="py-1.5">% Off</th>
-                <th className="py-1.5"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {discounts.map((d) => (
-                <tr key={d.id} className="border-t border-slate-100">
-                  <td className="py-1.5">{d.studentName}</td>
-                  <td className="py-1.5">{d.type}</td>
-                  <td className="py-1.5">{d.percentOff}%</td>
-                  <td className="py-1.5 text-right">
-                    {d.isActive && (
-                      <button
-                        onClick={() => deactivateDiscount(d.id).then(loadAll)}
-                        className="text-xs text-red-600 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </td>
+
+          <div className="max-h-48 overflow-y-auto border border-slate-100 rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <tr>
+                  <th className="py-2.5 px-3">Student</th>
+                  <th className="py-2.5 px-3">Type</th>
+                  <th className="py-2.5 px-3">Discount</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {discounts.map((d) => (
+                  <tr key={d.id} className="hover:bg-slate-50">
+                    <td className="py-2.5 px-3 font-semibold text-slate-800">{d.studentName}</td>
+                    <td className="py-2.5 px-3 text-slate-600">{d.type}</td>
+                    <td className="py-2.5 px-3 font-bold text-emerald-700">{d.percentOff}% off</td>
+                    <td className="py-2.5 px-3 text-right">
+                      {d.isActive && (
+                        <button
+                          onClick={() => deactivateDiscount(d.id).then(loadAll)}
+                          className="text-xs font-semibold text-red-600 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
-        <h2 className="font-semibold text-slate-800 mb-4">Invoices — {thisPeriod()}</h2>
+      {/* Invoices List */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-900">Period Invoices ({thisPeriod()})</h2>
+          <span className="text-xs text-slate-500">{invoices.length} invoices generated</span>
+        </div>
+
         {invoices.length === 0 ? (
-          <p className="text-slate-500 text-sm">No invoices for this period yet. Run billing above.</p>
+          <div className="p-8 text-center text-xs text-slate-400">
+            No invoices for this billing cycle yet. Click "Run Monthly Billing" above to generate invoices.
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-slate-500">
-              <tr>
-                <th className="py-1.5">Student</th>
-                <th className="py-1.5">Subject</th>
-                <th className="py-1.5">Total Due</th>
-                <th className="py-1.5">Paid</th>
-                <th className="py-1.5">Status</th>
-                <th className="py-1.5">Due Date</th>
-                <th className="py-1.5">Record Payment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((i) => (
-                <tr key={i.id} className="border-t border-slate-100">
-                  <td className="py-1.5">{i.studentName}</td>
-                  <td className="py-1.5">{i.subject}</td>
-                  <td className="py-1.5">{i.totalDue}</td>
-                  <td className="py-1.5">{i.amountPaid}</td>
-                  <td className="py-1.5">{i.status}</td>
-                  <td className="py-1.5">{i.dueDate}</td>
-                  <td className="py-1.5">
-                    {i.status !== "Paid" && (
-                      <div className="flex gap-1">
-                        <input
-                          type="number"
-                          placeholder="Amount"
-                          min="0.01"
-                          max={i.totalDue - i.amountPaid}
-                          step="0.01"
-                          value={payAmounts[i.id] || ""}
-                          onChange={(e) => setPayAmounts((prev) => ({ ...prev, [i.id]: e.target.value }))}
-                          className="w-20 border border-slate-300 rounded px-2 py-1 text-xs"
-                        />
-                        <button onClick={() => handlePay(i)} className="text-xs text-emerald-700 hover:underline">
-                          Pay
-                        </button>
-                      </div>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60 text-[12px] font-semibold text-slate-500">
+                  <th className="py-3 px-5">Student</th>
+                  <th className="py-3 px-5">Subject Class</th>
+                  <th className="py-3 px-5">Total Due</th>
+                  <th className="py-3 px-5">Amount Paid</th>
+                  <th className="py-3 px-5">Payment Status</th>
+                  <th className="py-3 px-5">Due Date</th>
+                  <th className="py-3 px-5 text-right">Record Cash Receipt</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {invoices.map((i) => (
+                  <tr key={i.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-5 font-semibold text-xs text-slate-900">
+                      {i.studentName}
+                    </td>
+                    <td className="py-3.5 px-5 text-xs text-slate-600">{i.subject}</td>
+                    <td className="py-3.5 px-5 text-xs font-mono font-bold text-slate-800">
+                      {formatCurrency(i.totalDue)}
+                    </td>
+                    <td className="py-3.5 px-5 text-xs font-mono font-medium text-emerald-700">
+                      {formatCurrency(i.amountPaid)}
+                    </td>
+                    <td className="py-3.5 px-5">
+                      {i.status === "Paid" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#C8FF3D] border border-emerald-600" />
+                          Paid
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          Pending
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-5 text-xs text-slate-500">{i.dueDate}</td>
+                    <td className="py-3.5 px-5 text-right">
+                      {i.status !== "Paid" && (
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <input
+                            type="number"
+                            placeholder="Amount"
+                            min="0.01"
+                            max={i.totalDue - i.amountPaid}
+                            step="0.01"
+                            value={payAmounts[i.id] || ""}
+                            onChange={(e) => setPayAmounts((prev) => ({ ...prev, [i.id]: e.target.value }))}
+                            className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:bg-white focus:border-[#2457FF]"
+                          />
+                          <button
+                            onClick={() => handlePay(i)}
+                            className="bg-[#2457FF] hover:bg-[#1b45db] text-white px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
+                          >
+                            Log Pay
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </DashboardShell>

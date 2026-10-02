@@ -1,22 +1,102 @@
 @import "tailwindcss";
 
+@theme {
+  --color-spruce-950: #062423;
+  --color-spruce-900: #0A2D2A;
+  --color-spruce-800: #0E483F;
+  --color-spruce-700: #125F54;
+  --color-spruce-600: #00A389;
+  --color-spruce-500: #10B981;
+  --color-spruce-200: #C2E5DE;
+  --color-spruce-100: #E6F4F1;
+  --color-spruce-50: #F4F7F6;
+
+  --color-cobalt: #2457FF;
+  --color-cobalt-hover: #1b45db;
+  --color-cobalt-light: #eff4ff;
+
+  --color-lime: #C8FF3D;
+  --color-lime-hover: #b8f226;
+  --color-lime-light: #f7fee7;
+
+  --color-surface-bg: #F4F7F6;
+  --color-surface-card: #ffffff;
+  --color-surface-border: #E8EEEC;
+}
+
 :root {
+  --spruce-dark: #062423;
+  --spruce-hero: #0E483F;
+  --spruce-teal: #00A389;
   color-scheme: light;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
-  background: #eef2ec;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #F4F7F6;
+  color: #1A2D2A;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: #bbf7d0;
+  background: #C2E5DE;
+  color: #062423;
 }
 
 input,
 select,
 textarea {
-  outline-color: #059669;
+  outline-color: #00A389;
+}
+
+/* Premium sleek scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8DB5AD;
+  border-radius: 9999px;
+  opacity: 0.6;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00A389;
+}
+
+/* Premium luxury utilities */
+.luxury-card {
+  background: #ffffff;
+  border: 1px solid #E2EBE8;
+  box-shadow: 0 1px 3px rgba(6, 36, 35, 0.03), 0 12px 24px -6px rgba(6, 36, 35, 0.04);
+}
+
+.luxury-hero {
+  background: linear-gradient(135deg, #0A332C 0%, #0E483F 50%, #062423 100%);
+  box-shadow: 0 10px 30px -5px rgba(6, 36, 35, 0.25);
+}
+
+/* Print utility for clean receipts and slips */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  aside,
+  header,
+  nav,
+  button {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
 }

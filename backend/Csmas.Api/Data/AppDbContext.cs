@@ -71,6 +71,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RefreshToken>(e =>
         {
             e.HasIndex(r => r.TokenHash).IsUnique();
+            e.HasOne(r => r.User).WithMany(u => u.RefreshTokens).HasForeignKey(r => r.UserId).IsRequired(false);
         });
 
         modelBuilder.Entity<Student>(e =>

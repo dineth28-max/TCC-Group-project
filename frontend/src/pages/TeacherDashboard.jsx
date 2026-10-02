@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardShell from "./DashboardShell";
 import { listMyClasses, listSessions, getClassPerformance } from "../api/attendance";
+import { QrCode, Calendar, TrendingUp, ArrowRight, CheckCircle2 } from "lucide-react";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -26,53 +27,108 @@ export default function TeacherDashboard() {
 
   return (
     <DashboardShell title="Teacher Dashboard">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Faculty Dashboard</h1>
+        <p className="text-xs text-slate-500 mt-1">Class sessions management, QR attendance verification, and student engagement</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Sessions Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-800">Today's Sessions</h2>
-            <Link to="/teacher/attendance-qr" className="text-xs text-emerald-700 hover:underline">
-              Open a new session
+            <div className="flex items-center gap-2">
+              <Calendar size={18} className="text-[#2457FF]" />
+              <h2 className="text-sm font-bold text-slate-900">Today's Class Sessions</h2>
+            </div>
+            <Link
+              to="/teacher/attendance-qr"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#2457FF] text-white hover:bg-[#1b45db] transition shadow-2xs"
+            >
+              <QrCode size={13} />
+              <span>Launch QR Session</span>
             </Link>
           </div>
+
           {todaySessions.length === 0 ? (
-            <p className="text-slate-500 text-sm">No sessions opened today yet.</p>
+            <div className="py-10 text-center text-xs text-slate-400">
+              No attendance sessions opened today yet. Launch a session to project the QR check-in code.
+            </div>
           ) : (
-            <ul className="text-sm space-y-2">
+            <ul className="divide-y divide-slate-100 text-xs">
               {todaySessions.map((s) => (
-                <li key={s.id} className="flex items-center justify-between border-t border-slate-100 pt-2">
-                  <span>{s.subject}</span>
-                  <span className={`text-xs ${s.status === "Open" ? "text-emerald-600" : "text-slate-500"}`}>{s.status}</span>
-                  <Link to={`/teacher/attendance-qr?sessionId=${s.id}`} className="text-xs text-emerald-700 hover:underline">
-                    View
-                  </Link>
+                <li key={s.id} className="py-3 flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-slate-800">{s.subject}</span>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">{s.sessionDate}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        s.status === "Open"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {s.status}
+                    </span>
+                    <Link
+                      to={`/teacher/attendance-qr?sessionId=${s.id}`}
+                      className="text-xs font-semibold text-[#2457FF] hover:underline"
+                    >
+                      Open Live QR →
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
-          <h2 className="font-semibold text-slate-800 mb-4">
-            Class Performance {performance ? `— ${performance.subject}` : ""}
-            <span className="text-xs text-slate-500 font-normal"> (avg. attendance, last 4 weeks)</span>
-          </h2>
+        {/* Class Performance Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={18} className="text-[#2457FF]" />
+              <h2 className="text-sm font-bold text-slate-900">
+                Class Attendance Rates
+              </h2>
+            </div>
+            {classes.length > 0 && (
+              <select
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-800 outline-none"
+              >
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.subject}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {!performance || performance.students.length === 0 ? (
-            <p className="text-slate-500 text-sm">No performance data yet for this class.</p>
+            <div className="py-10 text-center text-xs text-slate-400">
+              No recent attendance records found for this course.
+            </div>
           ) : (
-            <ul className="text-sm space-y-1.5 max-h-72 overflow-y-auto">
-              {performance.students.map((s) => (
-                <li key={s.studentId} className="flex items-center justify-between border-t border-slate-100 pt-1.5">
-                  <span>{s.fullName}</span>
-                  <span
-                    className={`text-xs font-medium ${
-                      s.attendanceRatePercent >= 75 ? "text-emerald-600" : "text-red-600"
-                    }`}
-                  >
-                    {s.attendanceRatePercent}% ({s.sessionsCount} sessions)
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="max-h-72 overflow-y-auto">
+              <ul className="divide-y divide-slate-100 text-xs">
+                {performance.students.map((s) => (
+                  <li key={s.studentId} className="py-2.5 flex items-center justify-between">
+                    <span className="font-medium text-slate-800">{s.fullName}</span>
+                    <span
+                      className={`font-semibold font-mono ${
+                        s.attendanceRatePercent >= 75 ? "text-emerald-700" : "text-red-600"
+                      }`}
+                    >
+                      {s.attendanceRatePercent}% ({s.sessionsCount} sessions)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>

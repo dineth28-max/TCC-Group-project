@@ -3,6 +3,7 @@ import DashboardShell from "./DashboardShell";
 import { listClasses, createClass, getClassRoster, updateClass } from "../api/classes";
 import { listBranches } from "../api/students";
 import { listUsers } from "../api/users";
+import { BookOpen, Plus, Users, UserCheck } from "lucide-react";
 
 export default function ClassesList() {
   const [classes, setClasses] = useState([]);
@@ -11,9 +12,15 @@ export default function ClassesList() {
   const [form, setForm] = useState({ subject: "", branchId: "" });
   const [error, setError] = useState(null);
   const [roster, setRoster] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   async function load() {
-    setClasses(await listClasses());
+    try {
+      const data = await listClasses();
+      setClasses(data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -48,92 +55,146 @@ export default function ClassesList() {
 
   return (
     <DashboardShell title="Classes">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Academic Classes & Courses</h1>
+        <p className="text-xs text-slate-500 mt-1">Configure subjects, assign faculty leads, and inspect class enrollments</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
-          <h2 className="font-semibold text-slate-800 mb-4">All Classes</h2>
-          {classes.length === 0 ? (
-            <p className="text-slate-500 text-sm">No classes yet — create one on the right.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="text-left text-slate-500">
-                <tr>
-                  <th className="py-1.5">Subject</th>
-                  <th className="py-1.5">Enrolled</th>
-                  <th className="py-1.5">Teacher</th>
-                  <th className="py-1.5"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {classes.map((c) => (
-                  <tr key={c.id} className="border-t border-slate-100">
-                    <td className="py-1.5">{c.subject}</td>
-                    <td className="py-1.5">{c.enrolledCount}</td>
-                    <td className="py-1.5">
-                      <select
-                        aria-label={`Assign teacher for ${c.subject}`}
-                        value={c.teacherUserId ?? ""}
-                        onChange={(e) => handleAssignTeacher(c, e.target.value ? Number(e.target.value) : null)}
-                        className="border border-slate-300 rounded px-2 py-1 text-xs"
-                      >
-                        <option value="">Unassigned</option>
-                        {teachers.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.fullName}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="py-1.5 text-right">
-                      <button onClick={() => showRoster(c.id)} className="text-xs text-emerald-700 hover:underline">
-                        View roster
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Classes Table */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Configured Subject Classes</h2>
+              <span className="text-xs font-semibold text-slate-500">{classes.length} classes active</span>
+            </div>
 
+            {loading ? (
+              <div className="p-8 text-center text-xs text-slate-400">Loading classes...</div>
+            ) : classes.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400">No classes registered yet. Create one on the right.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/60 text-[12px] font-semibold text-slate-500">
+                      <th className="py-3 px-5">Subject</th>
+                      <th className="py-3 px-5">Enrolled</th>
+                      <th className="py-3 px-5">Teacher Lead</th>
+                      <th className="py-3 px-5 text-right">Roster</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {classes.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-5 font-semibold text-xs text-slate-900">
+                          {c.subject}
+                        </td>
+                        <td className="py-3.5 px-5 text-xs text-slate-600 font-medium">
+                          <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md font-mono">
+                            <Users size={12} className="text-slate-400" />
+                            {c.enrolledCount}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-5">
+                          <select
+                            aria-label={`Assign teacher for ${c.subject}`}
+                            value={c.teacherUserId ?? ""}
+                            onChange={(e) => handleAssignTeacher(c, e.target.value ? Number(e.target.value) : null)}
+                            className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-medium focus:bg-white focus:border-[#2457FF] outline-none"
+                          >
+                            <option value="">Unassigned</option>
+                            {teachers.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.fullName}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-3.5 px-5 text-right">
+                          <button
+                            onClick={() => showRoster(c.id)}
+                            className="text-xs font-semibold text-[#2457FF] hover:underline"
+                          >
+                            View Roster
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Roster Preview Card */}
           {roster && (
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              <h3 className="font-medium text-sm text-slate-700 mb-2">Roster: {roster.subject}</h3>
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 animate-in fade-in duration-150">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Enrolled Students in {roster.subject}
+                </h3>
+                <span className="text-xs text-slate-500 font-medium">
+                  {roster.students.length} students enrolled
+                </span>
+              </div>
               {roster.students.length === 0 ? (
-                <p className="text-xs text-slate-500">No students enrolled.</p>
+                <p className="text-xs text-slate-400 py-3">No students currently enrolled in this class roster.</p>
               ) : (
-                <ul className="text-sm space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
                   {roster.students.map((s) => (
-                    <li key={s.id}>
-                      {s.fullName} <span className="text-slate-500 font-mono text-xs">({s.studentCode})</span>
-                    </li>
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs"
+                    >
+                      <span className="font-semibold text-slate-800">{s.fullName}</span>
+                      <span className="font-mono text-slate-400 text-[11px]">{s.studentCode}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-6">
-          <h2 className="font-semibold text-slate-800 mb-4">Create Class</h2>
-          {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
-          <form onSubmit={handleCreate} className="space-y-3">
+        {/* Create Class Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 h-fit">
+          <div className="flex items-center gap-2 mb-4">
+            <Plus size={18} className="text-[#2457FF]" />
+            <h2 className="text-sm font-bold text-slate-900">Add New Class</h2>
+          </div>
+
+          {error && (
+            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label htmlFor="class-subject" className="block text-xs text-slate-500 mb-1">Subject</label>
+              <label htmlFor="class-subject" className="block text-xs font-semibold text-slate-600 mb-1">
+                Subject & Grade Title
+              </label>
               <input
                 id="class-subject"
                 required
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-[#2457FF] outline-none transition"
+                placeholder="e.g. Pure Mathematics Grade 12"
               />
             </div>
+
             <div>
-              <label htmlFor="class-branch" className="block text-xs text-slate-500 mb-1">Branch</label>
+              <label htmlFor="class-branch" className="block text-xs font-semibold text-slate-600 mb-1">
+                Branch Campus
+              </label>
               <select
                 id="class-branch"
                 value={form.branchId}
                 onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-[#2457FF] outline-none transition"
               >
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -142,8 +203,12 @@ export default function ClassesList() {
                 ))}
               </select>
             </div>
-            <button type="submit" className="bg-emerald-700 text-white rounded px-4 py-2 text-sm w-full">
-              Create
+
+            <button
+              type="submit"
+              className="w-full bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-xl py-2.5 text-xs font-bold transition shadow-xs shadow-blue-500/20 cursor-pointer"
+            >
+              Create Class
             </button>
           </form>
         </div>

@@ -158,4 +158,4 @@ GitHub Actions workflows are included for building Docker images, pushing images
                     Random Forest Model
 ```
 
-The combination of these technologies provides a scalable architecture for managing students, attendance, academic information, authentication, reporting, and AI-based student risk analysis.
+The integration of these technologies creates a scalable architecture that supports student management, attendance tracking, academic data management, authentication, reporting, and AI-driven student risk assessment.

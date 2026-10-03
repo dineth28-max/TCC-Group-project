@@ -6,10 +6,12 @@ import { ScrollText, ShieldCheck, User } from "lucide-react";
 export default function AdminAuditLog() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     listAuditLog()
       .then(setRows)
+      .catch((err) => setError(err.response?.data?.message || "Could not load the audit log. Please refresh the page."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,7 +25,9 @@ export default function AdminAuditLog() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        {loading ? (
+        {error ? (
+          <div className="p-8 text-center text-xs text-red-600">{error}</div>
+        ) : loading ? (
           <div className="p-8 text-center text-xs text-slate-400">Loading audit records...</div>
         ) : rows.length === 0 ? (
           <div className="p-8 text-center text-xs text-slate-400">No audited system actions recorded yet.</div>

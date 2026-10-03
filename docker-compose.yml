@@ -51,7 +51,9 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     volumes:
-      - ./ai-service/model:/app/model
+      # Named volume (not the repo folder) so a model retrained on CSMAS data persists across
+      # restarts without overwriting the bootstrap model files committed in git.
+      - ai_models:/app/model
     ports:
       - "5001:5001"
 
@@ -88,3 +90,4 @@ volumes:
   mysql_data:
   backend_uploads:
   backend_keys:
+  ai_models:

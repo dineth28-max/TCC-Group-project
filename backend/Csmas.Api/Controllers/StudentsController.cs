@@ -195,8 +195,9 @@ public class StudentsController : TenantScopedController
 
         if (request.ClassIds is { Count: > 0 })
         {
+            // Only classes at the student's own branch — billing and attendance are branch-local.
             var validClassIds = await _db.Classes
-                .Where(c => request.ClassIds.Contains(c.Id))
+                .Where(c => request.ClassIds.Contains(c.Id) && c.BranchId == student.BranchId)
                 .Select(c => c.Id)
                 .ToListAsync();
 
@@ -339,6 +340,12 @@ public class StudentsController : TenantScopedController
         var klass = await _db.Classes.FirstOrDefaultAsync(c => c.Id == classId);
         if (klass is null) return NotFound(new { message = "Class not found." });
         if (IsBranchScoped && klass.BranchId != CurrentBranchId) return Forbid();
+        // Billing and attendance are branch-local: a student can't sit (or be invoiced for) a class
+        // run at another branch.
+        if (klass.BranchId != student.BranchId)
+        {
+            return BadRequest(new { message = "This class runs at a different branch from the student's branch." });
+        }
 
         var alreadyEnrolled = await _db.Enrollments.AnyAsync(e => e.StudentId == id && e.ClassId == classId);
         if (alreadyEnrolled) return Conflict(new { message = "Student is already enrolled in this class." });

@@ -63,14 +63,21 @@ export default function FeesManagement() {
   );
 
   async function loadAll() {
-    const [c, s, fs, d, inv, sum] = await Promise.all([
-      listClasses(),
-      listStudents(),
-      listFeeStructures(),
-      listDiscounts(),
-      listInvoices({ period: thisPeriod() }),
-      getCollectionSummary(thisPeriod()),
-    ]);
+    let results;
+    try {
+      results = await Promise.all([
+        listClasses(),
+        listStudents({ status: "Active" }),
+        listFeeStructures(),
+        listDiscounts(),
+        listInvoices({ period: thisPeriod() }),
+        getCollectionSummary(thisPeriod()),
+      ]);
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load fee data. Please refresh the page.");
+      return;
+    }
+    const [c, s, fs, d, inv, sum] = results;
     setClasses(c);
     setStudents(s);
     setStructures(fs);

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardShell from "./DashboardShell";
 import { listUsers, createUser, updateUser, resetUserPassword } from "../api/users";
 import { listBranches } from "../api/students";
-import { UserCheck, KeyRound, UserPlus, Shield, GraduationCap, Users } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
 
 const ROLE_TABS = ["Teacher", "Parent"];
 const EMPTY_FORM = { fullName: "", email: "", branchId: "", password: "", phoneNumber: "", nationalId: "", address: "", dateOfJoining: "", subjects: "" };
@@ -27,10 +27,27 @@ export default function TeachersManagement() {
   const [message, setMessage] = useState(null);
   const [temporaryPassword, setTemporaryPassword] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
+  const [actionId, setActionId] = useState(null);
 
   async function load() {
-    setUsers(await listUsers({ role }));
+    try {
+      setUsers(await listUsers({ role }));
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load accounts. Please refresh the page.");
+    }
   }
+
+  const visibleUsers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter(
+      (u) =>
+        u.fullName.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term) ||
+        (u.subjects || "").toLowerCase().includes(term)
+    );
+  }, [users, search]);
 
   useEffect(() => {
     load();
@@ -38,10 +55,12 @@ export default function TeachersManagement() {
   }, [role]);
 
   useEffect(() => {
-    listBranches().then((data) => {
-      setBranches(data);
-      if (data.length > 0) setForm((f) => ({ ...f, branchId: String(data[0].id) }));
-    });
+    listBranches()
+      .then((data) => {
+        setBranches(data);
+        if (data.length > 0) setForm((f) => ({ ...f, branchId: String(data[0].id) }));
+      })
+      .catch(() => setBranches([]));
   }, []);
 
   async function handleCreate(e) {
@@ -76,24 +95,50 @@ export default function TeachersManagement() {
   }
 
   async function handleToggleStatus(u) {
-    await updateUser(u.id, {
-      fullName: u.fullName,
-      branchId: u.branchId,
-      status: u.status === "Active" ? "Inactive" : "Active",
-      phoneNumber: u.phoneNumber,
-      nationalId: u.nationalId,
-      address: u.address,
-      dateOfJoining: u.dateOfJoining,
-      subjects: u.subjects,
-    });
-    load();
+    const deactivating = u.status === "Active";
+    if (deactivating && !window.confirm(`Deactivate ${u.fullName}? They will not be able to sign in until reactivated.`)) {
+      return;
+    }
+    setActionId(u.id);
+    setError(null);
+    setMessage(null);
+    try {
+      await updateUser(u.id, {
+        fullName: u.fullName,
+        branchId: u.branchId,
+        status: deactivating ? "Inactive" : "Active",
+        phoneNumber: u.phoneNumber,
+        nationalId: u.nationalId,
+        address: u.address,
+        dateOfJoining: u.dateOfJoining,
+        subjects: u.subjects,
+      });
+      setMessage(`${u.fullName} was ${deactivating ? "deactivated" : "reactivated"}.`);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.message || `Could not update ${u.fullName}.`);
+    } finally {
+      setActionId(null);
+    }
   }
 
   async function handleReset(u) {
+    if (!window.confirm(`Reset the password for ${u.fullName}? Their current password will stop working immediately.`)) {
+      return;
+    }
     setTemporaryPassword(null);
-    const res = await resetUserPassword(u.id);
-    setMessage(res.message);
-    if (res.temporaryPassword) setTemporaryPassword({ name: u.fullName, password: res.temporaryPassword });
+    setActionId(u.id);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await resetUserPassword(u.id);
+      setMessage(res.message);
+      if (res.temporaryPassword) setTemporaryPassword({ name: u.fullName, password: res.temporaryPassword });
+    } catch (err) {
+      setError(err.response?.data?.message || `Could not reset the password for ${u.fullName}.`);
+    } finally {
+      setActionId(null);
+    }
   }
 
   return (
@@ -112,6 +157,7 @@ export default function TeachersManagement() {
               key={r}
               onClick={() => {
                 setRole(r);
+                setSearch("");
                 setTemporaryPassword(null);
               }}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
@@ -133,6 +179,10 @@ export default function TeachersManagement() {
         </div>
       )}
 
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">{error}</div>
+      )}
+
       {temporaryPassword && (
         <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 mb-6 text-sm">
           <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">
@@ -150,6 +200,21 @@ export default function TeachersManagement() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Table Column */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={role === "Teacher" ? "Search name, email or subject..." : "Search name or email..."}
+                aria-label={`Search ${role.toLowerCase()} accounts`}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs outline-none focus:bg-white focus:border-[#2457FF]"
+              />
+            </div>
+            <span className="text-xs text-slate-500 font-medium">
+              {visibleUsers.length} of {users.length} {role.toLowerCase()}s
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
@@ -163,14 +228,16 @@ export default function TeachersManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {users.length === 0 ? (
+                {visibleUsers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-xs text-slate-400">
-                      No {role.toLowerCase()} accounts registered yet.
+                      {users.length === 0
+                        ? `No ${role.toLowerCase()} accounts registered yet.`
+                        : "No accounts match your search."}
                     </td>
                   </tr>
                 ) : (
-                  users.map((u) => (
+                  visibleUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-2.5">
@@ -220,13 +287,15 @@ export default function TeachersManagement() {
                       <td className="py-3.5 px-5 text-right space-x-2 whitespace-nowrap">
                         <button
                           onClick={() => handleReset(u)}
-                          className="text-xs font-semibold text-[#2457FF] hover:underline"
+                          disabled={actionId === u.id}
+                          className="text-xs font-semibold text-[#2457FF] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                         >
                           Reset Pass
                         </button>
                         <button
                           onClick={() => handleToggleStatus(u)}
-                          className={`text-xs font-semibold ${
+                          disabled={actionId === u.id}
+                          className={`text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
                             u.status === "Active"
                               ? "text-slate-500 hover:text-red-600"
                               : "text-emerald-700 hover:underline"
@@ -249,12 +318,6 @@ export default function TeachersManagement() {
             <UserPlus size={18} className="text-[#2457FF]" />
             <h2 className="text-sm font-bold text-slate-900">New {role} Profile</h2>
           </div>
-
-          {error && (
-            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleCreate} className="space-y-3.5">
             <div>

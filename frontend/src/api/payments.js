@@ -10,6 +10,9 @@ export const updateRevenueSplit = (payload) => apiClient.put("/settings/revenue-
 
 export const getTeacherRevenueSummary = () => apiClient.get("/teacher-revenue/summary").then((r) => r.data);
 
+export const getClassRevenue = (params = {}) =>
+  apiClient.get("/teacher-revenue/by-class", { params }).then((r) => r.data);
+
 export const listTeacherRevenueTransactions = (params = {}) =>
   apiClient.get("/teacher-revenue/transactions", { params }).then((r) => r.data);
 

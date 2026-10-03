@@ -50,18 +50,20 @@ export default function TeacherWeeklyTimetable() {
       setSlots(s || []);
       setRequests(r || []);
     } catch (err) {
-      console.error("Failed to load teacher timetable:", err);
+      setError(err?.response?.data?.message || "Could not load your timetable. Please refresh the page.");
     }
   }
 
   useEffect(() => {
     load();
-    listMyClasses().then((data) => {
-      setClasses(data || []);
-      if (data && data.length > 0) {
-        setForm((f) => ({ ...f, classId: String(data[0].id) }));
-      }
-    });
+    listMyClasses()
+      .then((data) => {
+        setClasses(data || []);
+        if (data && data.length > 0) {
+          setForm((f) => ({ ...f, classId: String(data[0].id) }));
+        }
+      })
+      .catch(() => setClasses([]));
   }, []);
 
   async function handleCreate(e) {

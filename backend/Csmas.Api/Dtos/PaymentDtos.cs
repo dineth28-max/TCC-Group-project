@@ -25,6 +25,22 @@ public record GatewayWebhookRequest(int TransactionId, string GatewayReference, 
 
 public record TeacherRevenueSummaryRow(int TeacherUserId, string TeacherName, decimal TotalNetEarned, decimal TotalCommission, int TransactionCount);
 
+/// <summary>Revenue collected for one class in a date range, across every payment method. The
+/// teacher/institute split only exists for online payments (TeacherEarning rows); counter payments
+/// are included in TotalCollected but have no recorded split.</summary>
+public record ClassRevenueRow(
+    int ClassId,
+    string Subject,
+    int BranchId,
+    string BranchName,
+    int? TeacherUserId,
+    string? TeacherName,
+    decimal TotalCollected,
+    decimal OnlineCollected,
+    decimal TeacherNet,
+    decimal InstituteCommission,
+    int PaymentCount);
+
 public record TeacherRevenueOverviewResponse(List<TeacherRevenueSummaryRow> Teachers, decimal AdminCommissionIncome);
 
 public record TeacherEarningRow(

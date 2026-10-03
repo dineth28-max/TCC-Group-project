@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 import joblib
+import json
 import os
+from datetime import datetime, timezone
 from generate_data import generate_student_data
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -63,6 +65,18 @@ def train():
     os.makedirs(MODEL_DIR, exist_ok=True)
     joblib.dump(model,  os.path.join(MODEL_DIR, "rf_model.pkl"))
     joblib.dump(scaler, os.path.join(MODEL_DIR, "scaler.pkl"))
+    # Marks this as the synthetic bootstrap model: the backend retrains on real CSMAS student
+    # records (POST /train) as soon as it sees a model whose source isn't "csmas".
+    with open(os.path.join(MODEL_DIR, "meta.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "source": "synthetic-bootstrap",
+            "trained_at": datetime.now(timezone.utc).isoformat(),
+            "training_rows": len(df),
+            "dropouts": int(y.sum()),
+            "test_rows": len(y_test),
+            "accuracy": round(float(accuracy_score(y_test, y_pred)), 4),
+            "roc_auc": round(float(roc_auc_score(y_test, y_prob)), 4),
+        }, f, indent=2)
     print(f"\nModel and scaler saved to ./{MODEL_DIR}/")
 
 if __name__ == "__main__":

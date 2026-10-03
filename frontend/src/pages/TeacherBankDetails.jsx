@@ -10,10 +10,12 @@ export default function TeacherBankDetails() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    getMyBankDetails().then((data) => {
-      setDetails(data);
-      setForm({ accountHolderName: data.accountHolderName || "", bankName: data.bankName || "", accountNumber: "" });
-    });
+    getMyBankDetails()
+      .then((data) => {
+        setDetails(data);
+        setForm({ accountHolderName: data.accountHolderName || "", bankName: data.bankName || "", accountNumber: "" });
+      })
+      .catch((err) => setError(err?.response?.data?.message || "Could not load your bank details. Please refresh the page."));
   }, []);
 
   async function handleSubmit(e) {

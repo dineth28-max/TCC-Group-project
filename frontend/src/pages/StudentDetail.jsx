@@ -34,9 +34,24 @@ export default function StudentDetail() {
   const [newParent, setNewParent] = useState({ fullName: "", email: "" });
   const [credentials, setCredentials] = useState({ loginEmail: "", loginPassword: "" });
   const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [temporaryPassword, setTemporaryPassword] = useState(null);
+
+  const failed = (err, fallback) => setError(err?.response?.data?.message || fallback);
 
   async function load() {
-    const data = await getStudent(id);
+    let data;
+    try {
+      data = await getStudent(id);
+    } catch (err) {
+      setLoadError(
+        err?.response?.status === 404
+          ? "This student does not exist, or belongs to a branch you cannot access."
+          : err?.response?.data?.message || "Could not load this student. Please refresh the page."
+      );
+      return;
+    }
+    setLoadError(null);
     setStudent(data);
     setForm({
       fullName: data.fullName,
@@ -49,32 +64,54 @@ export default function StudentDetail() {
   }
 
   async function loadParentLinks() {
-    setParentLinks(await listParentLinks(id));
-    setParentOptions(await listUsers({ role: "Parent" }));
+    try {
+      const [links, parents] = await Promise.all([listParentLinks(id), listUsers({ role: "Parent" })]);
+      setParentLinks(links);
+      setParentOptions(parents);
+    } catch (err) {
+      failed(err, "Could not load linked parents.");
+    }
   }
 
   useEffect(() => {
     load();
     loadParentLinks();
-    listClasses().then(setClasses);
+    listClasses()
+      .then(setClasses)
+      .catch(() => setClasses([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function handleLinkExistingParent() {
     if (!selectedParentId) return;
-    await addParentLink(id, Number(selectedParentId));
-    setSelectedParentId("");
-    loadParentLinks();
+    setError(null);
+    setMessage(null);
+    try {
+      await addParentLink(id, Number(selectedParentId));
+      setSelectedParentId("");
+      setMessage("Parent linked.");
+      loadParentLinks();
+    } catch (err) {
+      failed(err, "Could not link this parent.");
+    }
   }
 
   async function handleCreateAndLinkParent(e) {
     e.preventDefault();
     setError(null);
     try {
-      const created = await createUser({ fullName: newParent.fullName, email: newParent.email, role: "Parent", branchId: null });
+      setMessage(null);
+      setTemporaryPassword(null);
+      const { user: created, temporaryPassword: tempPassword } = await createUser({
+        fullName: newParent.fullName,
+        email: newParent.email,
+        role: "Parent",
+        branchId: null,
+      });
       await addParentLink(id, created.id);
       setNewParent({ fullName: "", email: "" });
-      setMessage("Parent account created and linked (demo default password).");
+      setMessage(`Parent account for ${created.fullName} created and linked.`);
+      if (tempPassword) setTemporaryPassword({ name: created.fullName, password: tempPassword });
       loadParentLinks();
     } catch (err) {
       setError(err.response?.data?.message || "Could not create/link parent.");
@@ -82,8 +119,16 @@ export default function StudentDetail() {
   }
 
   async function handleUnlinkParent(linkId) {
-    await removeParentLink(id, linkId);
-    loadParentLinks();
+    if (!window.confirm("Unlink this parent? They will no longer see this student in the parent portal.")) return;
+    setError(null);
+    setMessage(null);
+    try {
+      await removeParentLink(id, linkId);
+      setMessage("Parent unlinked.");
+      loadParentLinks();
+    } catch (err) {
+      failed(err, "Could not unlink this parent.");
+    }
   }
 
   async function handleSetCredentials(e) {
@@ -114,14 +159,20 @@ export default function StudentDetail() {
 
   async function handleToggleStatus() {
     if (busy) return;
+    const deactivating = student.status === "Active";
+    if (deactivating && !window.confirm(`Deactivate ${student.fullName}? They will no longer be billed or marked in attendance.`)) {
+      return;
+    }
     setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
-      if (student.status === "Active") {
-        await deactivateStudent(id);
-      } else {
-        await reactivateStudent(id);
-      }
+      if (deactivating) await deactivateStudent(id);
+      else await reactivateStudent(id);
+      setMessage(`Student ${deactivating ? "deactivated" : "reactivated"}.`);
       await load();
+    } catch (err) {
+      failed(err, "Could not change this student's status.");
     } finally {
       setBusy(false);
     }
@@ -144,9 +195,14 @@ export default function StudentDetail() {
   async function handleEnroll(classId) {
     if (busy) return;
     setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
       await enrollStudent(id, Number(classId));
+      setMessage("Enrolled in class.");
       await load();
+    } catch (err) {
+      failed(err, "Could not enroll the student in this class.");
     } finally {
       setBusy(false);
     }
@@ -154,13 +210,27 @@ export default function StudentDetail() {
 
   async function handleUnenroll(classId) {
     if (busy) return;
+    if (!window.confirm("Remove the student from this class? Future invoices for it will stop.")) return;
     setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
       await unenrollStudent(id, classId);
+      setMessage("Removed from class.");
       await load();
+    } catch (err) {
+      failed(err, "Could not remove the student from this class.");
     } finally {
       setBusy(false);
     }
+  }
+
+  if (loadError) {
+    return (
+      <DashboardShell title="Student Profile">
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-4">{loadError}</div>
+      </DashboardShell>
+    );
   }
 
   if (!student || !form) {
@@ -172,13 +242,25 @@ export default function StudentDetail() {
   }
 
   const enrolledClassIds = student.classes.map((c) => c.id);
-  const availableClasses = classes.filter((c) => !enrolledClassIds.includes(c.id));
+  // A student can only be enrolled in classes run at their own branch.
+  const availableClasses = classes.filter((c) => c.branchId === student.branchId && !enrolledClassIds.includes(c.id));
 
   return (
     <DashboardShell title={`Student: ${student.fullName}`}>
 
       {message && <p className="text-green-700 text-sm mb-3">{message}</p>}
       {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+      {temporaryPassword && (
+        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 mb-4 text-sm">
+          <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">
+            One-Time Temporary Password for {temporaryPassword.name}
+          </p>
+          <p className="font-mono text-base font-bold text-amber-900 mt-1.5 select-all">{temporaryPassword.password}</p>
+          <p className="text-amber-700 text-xs mt-1">
+            Copy and deliver securely. They will be asked to choose their own password at first sign in.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 bg-white rounded-lg shadow-sm border border-emerald-100 p-6 space-y-4">

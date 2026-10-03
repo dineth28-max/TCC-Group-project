@@ -12,6 +12,12 @@ public record MeResponse(
     int InstituteId,
     string InstituteName,
     int? BranchId,
+    string? BranchName,
+    string? PhoneNumber,
     bool MustChangePassword);
+
+/// <summary>Self-service profile edit. Email is deliberately not editable here — it is the login
+/// identifier, so changing it is an admin action.</summary>
+public record UpdateProfileRequest(string FullName, string? PhoneNumber);
 
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

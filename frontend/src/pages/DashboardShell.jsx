@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate, useLocation, NavLink, Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -15,23 +15,16 @@ import {
   LogOut,
   Search,
   PanelLeft,
-  ChevronDown,
   HelpCircle,
   CreditCard,
   Building2,
-  ScrollText,
-  SlidersHorizontal,
-  Target,
-  Radio,
-  ShieldCheck,
-  Layers,
-  MessageSquare,
   GraduationCap,
   Receipt,
   ClipboardCheck,
   Banknote,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import { listStudents } from "../api/students";
 
 function initials(name) {
   if (!name) return "FM";
@@ -44,14 +37,18 @@ function initials(name) {
     .toUpperCase();
 }
 
-export default function DashboardShell({ title, subtitle, children }) {
+export default function DashboardShell({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [studentHits, setStudentHits] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [activeHit, setActiveHit] = useState(0);
+  const searchInputRef = useRef(null);
 
   const isSystemAdmin = user?.role === "SystemAdmin";
   const isBranchAdmin = user?.role === "BranchAdmin";
@@ -148,6 +145,104 @@ export default function DashboardShell({ title, subtitle, children }) {
       },
     ];
   }, [isSystemAdmin, isBranchAdmin, isTeacher, isParent, isStudent]);
+
+  const isManagement = isSystemAdmin || isBranchAdmin;
+  const trimmedQuery = searchQuery.trim();
+
+  const pageHits = useMemo(() => {
+    if (!trimmedQuery) return [];
+    const term = trimmedQuery.toLowerCase();
+    return navSections
+      .flatMap((section) => section.items)
+      .filter((item) => item.label.toLowerCase().includes(term))
+      .slice(0, 5);
+  }, [navSections, trimmedQuery]);
+
+  // Live student lookup for admins — debounced so typing doesn't fire a request per keystroke.
+  useEffect(() => {
+    if (!isManagement || trimmedQuery.length < 2) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const data = await listStudents({ search: trimmedQuery });
+        if (!cancelled) setStudentHits(data.slice(0, 6));
+      } catch {
+        if (!cancelled) setStudentHits([]);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isManagement, trimmedQuery]);
+
+  const showStudentHits = isManagement && trimmedQuery.length >= 2;
+  const searchResults = useMemo(
+    () => [
+      ...(showStudentHits ? studentHits : []).map((s) => ({
+        key: `student-${s.id}`,
+        label: s.fullName,
+        hint: s.studentCode,
+        path: `/students/${s.id}`,
+        icon: Users,
+      })),
+      ...pageHits.map((item) => ({ key: `page-${item.path}`, label: item.label, hint: "Page", path: item.path, icon: item.icon })),
+      ...(isManagement && trimmedQuery
+        ? [
+            {
+              key: "all-students",
+              label: `All students matching "${trimmedQuery}"`,
+              hint: "Students",
+              path: `/students?search=${encodeURIComponent(trimmedQuery)}`,
+              icon: Search,
+            },
+          ]
+        : []),
+    ],
+    [showStudentHits, studentHits, pageHits, isManagement, trimmedQuery]
+  );
+
+  // Ctrl/Cmd+K focuses the header search from anywhere.
+  useEffect(() => {
+    function onKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function goToResult(result) {
+    if (!result) return;
+    setSearchOpen(false);
+    setSearchQuery("");
+    searchInputRef.current?.blur();
+    navigate(result.path);
+  }
+
+  function handleSearchKeyDown(e) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveHit((i) => Math.min(i + 1, searchResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveHit((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      goToResult(searchResults[activeHit] || searchResults[0]);
+    } else if (e.key === "Escape") {
+      setSearchOpen(false);
+      searchInputRef.current?.blur();
+    }
+  }
+
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
   async function handleLogout() {
     await logout();
@@ -263,7 +358,7 @@ export default function DashboardShell({ title, subtitle, children }) {
             type="button"
             onClick={() =>
               alert(
-                "CSMAS Tuition Institute Enterprise Support\n\n• Hotline: +94 11 234 5678\n• Email: support@csmas.lk\n• Colombo & Kandy Branch Desks Online"
+                `${user?.instituteName || "CSMAS"} Support\n\n• Hotline: +94 11 234 5678\n• Email: support@csmas.lk\n• Or contact your branch front desk`
               )
             }
             className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-xs font-medium text-[#8FAFA9] hover:text-white hover:bg-[#0A2E2B] transition cursor-pointer text-left"
@@ -309,16 +404,18 @@ export default function DashboardShell({ title, subtitle, children }) {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-bold text-[#1A2D2A] tracking-tight leading-tight">
-                  {user?.fullName || "Floyd Miles"}
+                  {user?.fullName}
                 </h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100/90 text-[#093C35] text-[10px] font-extrabold uppercase tracking-wider border border-emerald-300/60 shadow-2xs">
-                  {user?.role || "System Admin"}
+                  {user?.role?.replace(/([a-z])([A-Z])/g, "$1 $2")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-[11px] text-[#718A85] font-medium">
-                <span>{user?.instituteName || "Colombo Tuition Institute"}</span>
+                <span>{user?.instituteName}</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-emerald-700 font-semibold">{user?.branchName || "Main Campus"}</span>
+                <span className="text-emerald-700 font-semibold">
+                  {user?.branchName || (isSystemAdmin ? "All Branches" : isParent ? "Parent Portal" : "Institute")}
+                </span>
               </div>
             </div>
           </div>
@@ -331,44 +428,96 @@ export default function DashboardShell({ title, subtitle, children }) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-[11px] text-[#1A2D2A] font-bold tracking-tight">Academic Year 2026</span>
+              <span className="text-[11px] text-[#1A2D2A] font-bold tracking-tight">Academic Year {new Date().getFullYear()}</span>
             </div>
 
-            {/* Pill Search Input matching premium enterprise aesthetics */}
-            <div className="hidden sm:flex items-center justify-between gap-2 bg-white/95 border border-[#DCE6E2] rounded-2xl px-3.5 py-2 w-64 text-xs text-slate-500 shadow-2xs focus-within:border-[#00A389] focus-within:ring-2 focus-within:ring-[#00A389]/15 transition">
-              <div className="flex items-center gap-2 flex-1">
-                <Search size={15} className="text-[#8DAAA5]" />
-                <input
-                  type="text"
-                  placeholder="Quick search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent border-none outline-none text-xs text-[#1A2D2A] placeholder-[#8DAAA5] w-full"
-                />
+            {/* Global search: students (admins) + navigation pages */}
+            <div className="relative hidden sm:block">
+              <div className="flex items-center justify-between gap-2 bg-white/95 border border-[#DCE6E2] rounded-2xl px-3.5 py-2 w-64 text-xs text-slate-500 shadow-2xs focus-within:border-[#00A389] focus-within:ring-2 focus-within:ring-[#00A389]/15 transition">
+                <div className="flex items-center gap-2 flex-1">
+                  <Search size={15} className="text-[#8DAAA5]" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    role="combobox"
+                    aria-expanded={searchOpen && trimmedQuery.length > 0}
+                    aria-label={isManagement ? "Search students and pages" : "Search pages"}
+                    placeholder={isManagement ? "Search students, pages..." : "Search pages..."}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setActiveHit(0);
+                      setSearchOpen(true);
+                    }}
+                    onFocus={() => setSearchOpen(true)}
+                    onBlur={() => setSearchOpen(false)}
+                    onKeyDown={handleSearchKeyDown}
+                    className="bg-transparent border-none outline-none text-xs text-[#1A2D2A] placeholder-[#8DAAA5] w-full"
+                  />
+                </div>
+                <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 rounded border border-slate-200 select-none">
+                  {isMac ? "⌘K" : "Ctrl K"}
+                </kbd>
               </div>
-              <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 rounded border border-slate-200 select-none">
-                ⌘K
-              </kbd>
+
+              {searchOpen && trimmedQuery && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-[#E3EBE8] rounded-2xl shadow-lg z-50 overflow-hidden">
+                  {searchResults.length === 0 ? (
+                    <div className="px-4 py-3 text-xs text-slate-400">
+                      {searching && showStudentHits
+                        ? "Searching..."
+                        : isManagement && trimmedQuery.length < 2
+                          ? "Type at least 2 characters"
+                          : "No matches found"}
+                    </div>
+                  ) : (
+                    <ul className="py-1 max-h-96 overflow-y-auto">
+                      {searchResults.map((result, index) => (
+                        <li key={result.key}>
+                          <button
+                            type="button"
+                            // mousedown would blur the input (closing the list) before click lands
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => goToResult(result)}
+                            onMouseEnter={() => setActiveHit(index)}
+                            className={`w-full flex items-center gap-3 px-4 py-2 text-left text-xs transition cursor-pointer ${
+                              index === activeHit ? "bg-emerald-50 text-[#0E4940]" : "text-slate-700"
+                            }`}
+                          >
+                            <result.icon size={14} className="text-[#759E97] shrink-0" />
+                            <span className="flex-1 truncate font-semibold">{result.label}</span>
+                            <span className="text-[10px] text-slate-400 font-mono shrink-0">{result.hint}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {searching && searchResults.length > 0 && (
+                    <div className="px-4 py-1.5 text-[10px] text-slate-400 border-t border-slate-100">Searching students...</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Notification Bell in rounded card */}
+            {/* Notification Bell — each role's own inbox/dashboard (only admins can open /notifications) */}
             <Link
-              to="/notifications"
+              to={isManagement ? "/notifications" : isParent ? "/portal" : isStudent ? "/student" : "/teacher"}
               className="h-9 w-9 rounded-2xl bg-white border border-[#E3EBE8] flex items-center justify-center text-[#55736E] hover:text-[#00A389] hover:bg-emerald-50 transition shadow-2xs relative"
               aria-label="Notifications"
             >
               <Bell size={16} />
-              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#00A389]" />
             </Link>
 
-            {/* Settings Cog Button */}
-            <Link
-              to="/settings"
-              className="h-9 w-9 rounded-2xl bg-white border border-[#E3EBE8] flex items-center justify-center text-[#55736E] hover:text-[#00A389] hover:bg-emerald-50 transition shadow-2xs"
-              aria-label="Settings"
-            >
-              <SettingsIcon size={16} />
-            </Link>
+            {/* Settings Cog Button (System Admin only — the only role allowed on /settings) */}
+            {isSystemAdmin && (
+              <Link
+                to="/settings"
+                className="h-9 w-9 rounded-2xl bg-white border border-[#E3EBE8] flex items-center justify-center text-[#55736E] hover:text-[#00A389] hover:bg-emerald-50 transition shadow-2xs"
+                aria-label="Settings"
+              >
+                <SettingsIcon size={16} />
+              </Link>
+            )}
           </div>
         </header>
 

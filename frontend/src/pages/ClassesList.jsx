@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardShell from "./DashboardShell";
 import { listClasses, createClass, getClassRoster, updateClass } from "../api/classes";
 import { listBranches } from "../api/students";
 import { listUsers } from "../api/users";
-import { BookOpen, Plus, Users, UserCheck } from "lucide-react";
+import { Plus, Users, Search } from "lucide-react";
 
 export default function ClassesList() {
   const [classes, setClasses] = useState([]);
@@ -13,11 +13,19 @@ export default function ClassesList() {
   const [error, setError] = useState(null);
   const [roster, setRoster] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [search, setSearch] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
+  const [savingId, setSavingId] = useState(null);
 
   async function load() {
     try {
       const data = await listClasses();
       setClasses(data);
+      setListError(null);
+    } catch (err) {
+      setListError(err.response?.data?.message || "Could not load classes. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -25,16 +33,41 @@ export default function ClassesList() {
 
   useEffect(() => {
     load();
-    listBranches().then((data) => {
-      setBranches(data);
-      if (data.length > 0) setForm((f) => ({ ...f, branchId: String(data[0].id) }));
-    });
-    listUsers({ role: "Teacher" }).then(setTeachers);
+    listBranches()
+      .then((data) => {
+        setBranches(data);
+        if (data.length > 0) setForm((f) => ({ ...f, branchId: String(data[0].id) }));
+      })
+      .catch(() => setBranches([]));
+    listUsers({ role: "Teacher" })
+      .then(setTeachers)
+      .catch(() => setTeachers([]));
   }, []);
 
+  const branchName = (id) => branches.find((b) => b.id === id)?.name || "";
+
+  const visibleClasses = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return classes.filter(
+      (c) =>
+        (!branchFilter || String(c.branchId) === branchFilter) &&
+        (!term || c.subject.toLowerCase().includes(term) || (c.teacherName || "").toLowerCase().includes(term))
+    );
+  }, [classes, search, branchFilter]);
+
   async function handleAssignTeacher(klass, teacherUserId) {
-    await updateClass(klass.id, { subject: klass.subject, branchId: klass.branchId, teacherUserId: teacherUserId || null });
-    load();
+    setSavingId(klass.id);
+    setListError(null);
+    setNotice(null);
+    try {
+      await updateClass(klass.id, { subject: klass.subject, branchId: klass.branchId, teacherUserId: teacherUserId || null });
+      setNotice(`Teacher updated for ${klass.subject}.`);
+      await load();
+    } catch (err) {
+      setListError(err.response?.data?.message || `Could not change the teacher for ${klass.subject}.`);
+    } finally {
+      setSavingId(null);
+    }
   }
 
   async function handleCreate(e) {
@@ -50,7 +83,12 @@ export default function ClassesList() {
   }
 
   async function showRoster(classId) {
-    setRoster(await getClassRoster(classId));
+    setListError(null);
+    try {
+      setRoster(await getClassRoster(classId));
+    } catch (err) {
+      setListError(err.response?.data?.message || "Could not load this class roster.");
+    }
   }
 
   return (
@@ -67,30 +105,72 @@ export default function ClassesList() {
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900">Configured Subject Classes</h2>
-              <span className="text-xs font-semibold text-slate-500">{classes.length} classes active</span>
+              <span className="text-xs font-semibold text-slate-500">
+                {visibleClasses.length === classes.length
+                  ? `${classes.length} classes`
+                  : `${visibleClasses.length} of ${classes.length} classes`}
+              </span>
             </div>
+            <div className="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-48">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search class or teacher..."
+                  aria-label="Search classes"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs outline-none focus:bg-white focus:border-[#2457FF]"
+                />
+              </div>
+              {branches.length > 1 && (
+                <select
+                  value={branchFilter}
+                  onChange={(e) => setBranchFilter(e.target.value)}
+                  aria-label="Filter by branch"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-[#2457FF]"
+                >
+                  <option value="">All branches</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {listError && (
+              <div className="mx-5 mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">{listError}</div>
+            )}
+            {notice && (
+              <div className="mx-5 mt-3 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-3">{notice}</div>
+            )}
 
             {loading ? (
               <div className="p-8 text-center text-xs text-slate-400">Loading classes...</div>
-            ) : classes.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-400">No classes registered yet. Create one on the right.</div>
+            ) : visibleClasses.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400">
+                {classes.length === 0 ? "No classes registered yet. Create one on the right." : "No classes match your search."}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/60 text-[12px] font-semibold text-slate-500">
                       <th className="py-3 px-5">Subject</th>
+                      <th className="py-3 px-5">Branch</th>
                       <th className="py-3 px-5">Enrolled</th>
                       <th className="py-3 px-5">Teacher Lead</th>
                       <th className="py-3 px-5 text-right">Roster</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {classes.map((c) => (
+                    {visibleClasses.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-5 font-semibold text-xs text-slate-900">
                           {c.subject}
                         </td>
+                        <td className="py-3.5 px-5 text-xs text-slate-500">{branchName(c.branchId)}</td>
                         <td className="py-3.5 px-5 text-xs text-slate-600 font-medium">
                           <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md font-mono">
                             <Users size={12} className="text-slate-400" />
@@ -101,21 +181,25 @@ export default function ClassesList() {
                           <select
                             aria-label={`Assign teacher for ${c.subject}`}
                             value={c.teacherUserId ?? ""}
+                            disabled={savingId === c.id}
                             onChange={(e) => handleAssignTeacher(c, e.target.value ? Number(e.target.value) : null)}
                             className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-medium focus:bg-white focus:border-[#2457FF] outline-none"
                           >
                             <option value="">Unassigned</option>
-                            {teachers.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.fullName}
-                              </option>
-                            ))}
+                            {/* Only teachers from this class's branch, plus whoever is assigned now. */}
+                            {teachers
+                              .filter((t) => t.branchId === c.branchId || t.id === c.teacherUserId)
+                              .map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.fullName}
+                                </option>
+                              ))}
                           </select>
                         </td>
                         <td className="py-3.5 px-5 text-right">
                           <button
                             onClick={() => showRoster(c.id)}
-                            className="text-xs font-semibold text-[#2457FF] hover:underline"
+                            className="text-xs font-semibold text-[#2457FF] hover:underline cursor-pointer"
                           >
                             View Roster
                           </button>

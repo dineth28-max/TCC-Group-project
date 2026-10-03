@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import {
+  AppErrorBoundary,
+  GlobalErrorToast,
+} from "./components/AppErrorHandling";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -37,284 +41,287 @@ const MANAGEMENT_ROLES = ["SystemAdmin", "BranchAdmin"];
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/change-password"
-            element={
-              <ProtectedRoute>
-                <ChangePassword />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute roles={["SystemAdmin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/branch"
-            element={
-              <ProtectedRoute roles={["BranchAdmin"]}>
-                <BranchAdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher"
-            element={
-              <ProtectedRoute roles={["Teacher"]}>
-                <TeacherDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher/attendance-qr"
-            element={
-              <ProtectedRoute roles={["Teacher"]}>
-                <TeacherAttendanceQr />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher/timetable"
-            element={
-              <ProtectedRoute roles={["Teacher"]}>
-                <TeacherWeeklyTimetable />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher/bank-details"
-            element={
-              <ProtectedRoute roles={["Teacher"]}>
-                <TeacherBankDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/portal"
-            element={
-              <ProtectedRoute roles={["Parent"]}>
-                <ParentPortal />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student"
-            element={
-              <ProtectedRoute roles={["Student"]}>
-                <StudentView />
-              </ProtectedRoute>
-            }
-          />
+    <AppErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <GlobalErrorToast />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePassword />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={["SystemAdmin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/branch"
+              element={
+                <ProtectedRoute roles={["BranchAdmin"]}>
+                  <BranchAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher"
+              element={
+                <ProtectedRoute roles={["Teacher"]}>
+                  <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/attendance-qr"
+              element={
+                <ProtectedRoute roles={["Teacher"]}>
+                  <TeacherAttendanceQr />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/timetable"
+              element={
+                <ProtectedRoute roles={["Teacher"]}>
+                  <TeacherWeeklyTimetable />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/bank-details"
+              element={
+                <ProtectedRoute roles={["Teacher"]}>
+                  <TeacherBankDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal"
+              element={
+                <ProtectedRoute roles={["Parent"]}>
+                  <ParentPortal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student"
+              element={
+                <ProtectedRoute roles={["Student"]}>
+                  <StudentView />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/students"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <StudentsList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/students/new"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <StudentRegister />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/students/import"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <StudentBulkImport />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/students/:id"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <StudentDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/classes"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <ClassesList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/attendance"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AttendanceReports />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/fees"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <FeesManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/counter-payments"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <PhysicalPaymentsPortal />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/physical-payments"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <PhysicalPaymentsPortal />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teachers"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <TeachersManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/timetable"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <TimetableBuilder />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/announcements"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AnnouncementsManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <NotificationsManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/branches"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <BranchesManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <SettingsManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher-revenues"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminTeacherRevenues />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/class-revenue"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminTeacherRevenues />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher-bank-details"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminTeacherBankDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teacher-revenue-transactions"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminTeacherRevenueTransactions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/schedule-requests"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminScheduleRequests />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/schedule-requests"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <AdminScheduleRequests />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/risk-students"
-            element={
-              <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                <HighRiskStudents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/audit-log"
-            element={<Navigate to="/admin" replace />}
-          />
-          <Route
-            path="/student/payments"
-            element={
-              <ProtectedRoute roles={["Student"]}>
-                <StudentPayments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/portal/payments"
-            element={
-              <ProtectedRoute roles={["Parent"]}>
-                <ParentPayments />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/students"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <StudentsList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/students/new"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <StudentRegister />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/students/import"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <StudentBulkImport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/students/:id"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <StudentDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/classes"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <ClassesList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AttendanceReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fees"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <FeesManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/counter-payments"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <PhysicalPaymentsPortal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/physical-payments"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <PhysicalPaymentsPortal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teachers"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <TeachersManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/timetable"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <TimetableBuilder />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/announcements"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AnnouncementsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <NotificationsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/branches"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <BranchesManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <SettingsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher-revenues"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AdminTeacherRevenues />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/class-revenue"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AdminTeacherRevenues />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher-bank-details"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AdminTeacherBankDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher-revenue-transactions"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AdminTeacherRevenueTransactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/schedule-requests"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AdminScheduleRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/schedule-requests"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <AdminScheduleRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/risk-students"
+              element={
+                <ProtectedRoute roles={MANAGEMENT_ROLES}>
+                  <HighRiskStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audit-log"
+              element={<Navigate to="/admin" replace />}
+            />
+            <Route
+              path="/student/payments"
+              element={
+                <ProtectedRoute roles={["Student"]}>
+                  <StudentPayments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/payments"
+              element={
+                <ProtectedRoute roles={["Parent"]}>
+                  <ParentPayments />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </AppErrorBoundary>
   );
 }

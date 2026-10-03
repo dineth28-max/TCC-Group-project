@@ -5,10 +5,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Csmas.Api.Services;
 
 /// <summary>
-/// Gives every active student without a RiskScore one, through the real AI model
-/// (RiskScoringService) — so a freshly seeded or bulk-imported roster has a populated High-Risk
-/// panel without anyone clicking "predict" 2,000 times. Scores are never fabricated: if the
-/// ai-service container isn't reachable yet, this waits and retries rather than writing anything.
+/// Keeps the AI risk engine ready without manual steps after `docker compose up`:
+///  1. If the AI service is still running its synthetic bootstrap model, retrain it on this
+///     system's real student records (features from attendance/fees/engagement, labelled by who
+///     actually dropped out) — see RiskScoringService.TrainModelFromStudentRecords.
+///  2. Score every active student that has no risk score yet (or all of them after a retrain).
+/// Scores are never fabricated: if the ai-service container isn't reachable yet, this waits and
+/// retries rather than writing anything.
 /// </summary>
 public class RiskBackfillBackgroundService : BackgroundService
 {
@@ -30,47 +33,62 @@ public class RiskBackfillBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            List<int> pending;
-            using (var scope = _scopeFactory.CreateScope())
+            try
             {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                pending = await db.Students.IgnoreQueryFilters()
-                    .Where(s => s.Status == StudentStatus.Active && !db.RiskScores.IgnoreQueryFilters().Any(r => r.StudentId == s.Id))
-                    .Select(s => s.Id)
-                    .ToListAsync(stoppingToken);
+                if (await RunOnce(stoppingToken)) return;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Risk engine startup run failed.");
             }
 
-            if (pending.Count == 0) return;
-            _logger.LogInformation("Risk backfill: scoring {Count} students without a risk score.", pending.Count);
-
-            var scored = 0;
-            var aiUnavailable = false;
-            foreach (var chunk in pending.Chunk(100))
-            {
-                // Fresh scope per chunk keeps the change tracker small across thousands of students.
-                using var scope = _scopeFactory.CreateScope();
-                var scoring = scope.ServiceProvider.GetRequiredService<RiskScoringService>();
-                foreach (var studentId in chunk)
-                {
-                    if (stoppingToken.IsCancellationRequested) return;
-                    if (await scoring.RecomputeForStudent(studentId))
-                    {
-                        scored++;
-                    }
-                    else
-                    {
-                        aiUnavailable = true;
-                        break;
-                    }
-                }
-                if (aiUnavailable) break;
-            }
-
-            _logger.LogInformation("Risk backfill: {Scored}/{Total} students scored.", scored, pending.Count);
-            if (!aiUnavailable) return;
-
-            _logger.LogWarning("Risk backfill paused — AI service unavailable. Retrying in {Seconds}s.", RetryDelay.TotalSeconds);
+            _logger.LogWarning("Risk engine not ready yet (AI service unavailable). Retrying in {Seconds}s.", RetryDelay.TotalSeconds);
             await Task.Delay(RetryDelay, stoppingToken);
         }
+    }
+
+    /// <returns>true when done; false to retry later.</returns>
+    private async Task<bool> RunOnce(CancellationToken stoppingToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var aiClient = scope.ServiceProvider.GetRequiredService<AiRiskClient>();
+        var scoring = scope.ServiceProvider.GetRequiredService<RiskScoringService>();
+
+        var modelInfo = await aiClient.GetModelInfo();
+        if (modelInfo is null) return false;
+
+        var retrained = false;
+        if (modelInfo.Source != "csmas")
+        {
+            var (model, error) = await scoring.TrainModelFromStudentRecords();
+            if (model is null)
+            {
+                // Not enough labelled history yet (e.g. a brand-new institute) — keep using the
+                // bootstrap model rather than blocking scoring forever.
+                _logger.LogWarning("Could not train the risk model on CSMAS data: {Error}", error);
+                if (error is not null && error.StartsWith("The AI service")) return false;
+            }
+            else
+            {
+                retrained = true;
+                _logger.LogInformation(
+                    "Risk model trained on {Rows} CSMAS students ({Dropouts} dropouts): accuracy {Accuracy:P1}, ROC-AUC {RocAuc:0.000}.",
+                    model.TrainingRows, model.Dropouts, model.Accuracy, model.RocAuc);
+            }
+        }
+
+        var query = db.Students.IgnoreQueryFilters().Where(s => s.Status == StudentStatus.Active);
+        if (!retrained)
+        {
+            query = query.Where(s => !db.RiskScores.IgnoreQueryFilters().Any(r => r.StudentId == s.Id));
+        }
+        var pending = await query.Select(s => s.Id).ToListAsync(stoppingToken);
+        if (pending.Count == 0) return true;
+
+        _logger.LogInformation("Risk engine: scoring {Count} students with the trained model.", pending.Count);
+        var scored = await scoring.RecomputeForStudents(pending);
+        _logger.LogInformation("Risk engine: {Scored}/{Total} students scored.", scored, pending.Count);
+        return scored == pending.Count;
     }
 }

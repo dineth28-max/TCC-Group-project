@@ -67,7 +67,9 @@ builder.Services.AddHttpClient<Csmas.Api.Services.AiRiskClient>(client =>
 {
     var aiServiceBaseUrl = builder.Configuration["AiService:BaseUrl"] ?? "http://ai-service:5001";
     client.BaseAddress = new Uri(aiServiceBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(5);
+    // Training and batch scoring need longer than a single prediction; AiRiskClient.Predict
+    // applies its own 5-second budget so inline recomputes still fail fast.
+    client.Timeout = TimeSpan.FromSeconds(120);
 });
 builder.Services.AddScoped<Csmas.Api.Services.RiskFeatureBuilder>();
 builder.Services.AddScoped<Csmas.Api.Services.RiskScoringService>();
@@ -127,7 +129,9 @@ builder.Services.AddRateLimiter(options =>
         return System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ =>
             new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
             {
-                PermitLimit = 100,
+                // 300/min: a counter clerk or admin working quickly through dashboards legitimately
+                // makes well over 100 calls a minute; this still stops scripted abuse.
+                PermitLimit = 300,
                 Window = TimeSpan.FromMinutes(1),
                 SegmentsPerWindow = 4,
             });

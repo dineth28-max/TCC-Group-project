@@ -27,13 +27,18 @@ export default function StudentPayments() {
   const [message, setMessage] = useState(null);
 
   function load() {
-    getMyFees().then((data) => {
-      setFees(data);
-      if (data?.invoices?.length > 0 && !selectedVoucherInv) {
-        const unpaid = data.invoices.find((i) => i.status !== "Paid") || data.invoices[0];
-        setSelectedVoucherInv(unpaid);
-      }
-    });
+    getMyFees()
+      .then((data) => {
+        setFees(data);
+        // Refresh the selected voucher too, so its status/amount is current after a payment.
+        setSelectedVoucherInv((current) => {
+          const invoices = data?.invoices || [];
+          const refreshed = current && invoices.find((i) => i.id === current.id);
+          if (refreshed) return refreshed;
+          return invoices.find((i) => i.status !== "Paid") || invoices[0] || null;
+        });
+      })
+      .catch((err) => setError(err?.response?.data?.message || "Could not load your fees. Please refresh the page."));
   }
 
   useEffect(() => {

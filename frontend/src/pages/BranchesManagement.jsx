@@ -16,7 +16,11 @@ export default function BranchesManagement() {
   const [message, setMessage] = useState(null);
 
   async function load() {
-    setBranches(await listBranches());
+    try {
+      setBranches(await listBranches());
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load branches. Please refresh the page.");
+    }
   }
 
   useEffect(() => {
@@ -59,12 +63,20 @@ export default function BranchesManagement() {
   }
 
   async function handleToggleStatus(b) {
-    if (b.status === "Active") {
-      await deactivateBranch(b.id);
-    } else {
-      await reactivateBranch(b.id);
+    const deactivating = b.status === "Active";
+    if (deactivating && !window.confirm(`Deactivate ${b.name}? Its staff and students will remain, but the branch will be marked inactive.`)) {
+      return;
     }
-    load();
+    setError(null);
+    setMessage(null);
+    try {
+      if (deactivating) await deactivateBranch(b.id);
+      else await reactivateBranch(b.id);
+      setMessage(`${b.name} ${deactivating ? "deactivated" : "reactivated"}.`);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not update this branch's status.");
+    }
   }
 
   return (

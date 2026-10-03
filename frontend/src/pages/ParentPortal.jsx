@@ -19,21 +19,34 @@ export default function ParentPortal() {
   const [inbox, setInbox] = useState({ unreadCount: 0, items: [] });
   const [showInbox, setShowInbox] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [childError, setChildError] = useState(null);
 
   useEffect(() => {
-    listMyChildren().then((data) => {
-      setChildren(data);
-      if (data.length > 0) setSelectedId(data[0].id);
-      setLoading(false);
-    });
-    listPortalAnnouncements().then(setAnnouncements);
-    listMyNotifications().then(setInbox);
+    listMyChildren()
+      .then((data) => {
+        setChildren(data);
+        if (data.length > 0) setSelectedId(data[0].id);
+      })
+      .catch((err) => setLoadError(err?.response?.data?.message || "Could not load your children. Please refresh the page."))
+      .finally(() => setLoading(false));
+    listPortalAnnouncements()
+      .then(setAnnouncements)
+      .catch(() => setAnnouncements([]));
+    listMyNotifications()
+      .then(setInbox)
+      .catch(() => setInbox({ unreadCount: 0, items: [] }));
   }, []);
 
   useEffect(() => {
     if (!selectedId) return;
-    getChildAttendance(selectedId).then(setAttendance);
-    getChildFees(selectedId).then(setFees);
+    Promise.all([getChildAttendance(selectedId), getChildFees(selectedId)])
+      .then(([attendanceData, feeData]) => {
+        setAttendance(attendanceData);
+        setFees(feeData);
+        setChildError(null);
+      })
+      .catch((err) => setChildError(err?.response?.data?.message || "Could not load this child's attendance and fees."));
   }, [selectedId]);
 
   async function handleOpenInbox() {
@@ -41,9 +54,12 @@ export default function ParentPortal() {
   }
 
   async function handleReadNotification(id) {
-    await markNotificationRead(id);
-    const fresh = await listMyNotifications();
-    setInbox(fresh);
+    try {
+      await markNotificationRead(id);
+      setInbox(await listMyNotifications());
+    } catch {
+      // Non-critical: if this fails the notification simply stays unread.
+    }
   }
 
   const selectedChild = children.find((c) => c.id === selectedId);
@@ -52,6 +68,14 @@ export default function ParentPortal() {
     return (
       <DashboardShell title="Parent / Guardian Portal">
         <p className="text-slate-500 text-sm">Loading…</p>
+      </DashboardShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <DashboardShell title="Parent / Guardian Portal">
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-4">{loadError}</div>
       </DashboardShell>
     );
   }
@@ -114,6 +138,10 @@ export default function ParentPortal() {
           )}
         </div>
       </div>
+
+      {childError && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">{childError}</div>
+      )}
 
       {selectedChild && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

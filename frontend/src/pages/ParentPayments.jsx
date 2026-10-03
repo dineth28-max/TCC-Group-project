@@ -26,10 +26,12 @@ export default function ParentPayments() {
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    listMyChildren().then((data) => {
-      setChildren(data || []);
-      if (data && data.length > 0) setSelectedId(data[0].id);
-    });
+    listMyChildren()
+      .then((data) => {
+        setChildren(data || []);
+        if (data && data.length > 0) setSelectedId(data[0].id);
+      })
+      .catch((err) => setError(err?.response?.data?.message || "Could not load your children. Please refresh the page."));
     const paid = searchParams.get("paid");
     if (paid === "1") {
       setMessage("Payment submitted successfully — if approved, it will reflect as Paid shortly.");
@@ -41,13 +43,19 @@ export default function ParentPayments() {
 
   function load() {
     if (selectedId) {
-      getChildFees(selectedId).then((data) => {
-        setFees(data);
-        if (data?.invoices?.length > 0 && !selectedVoucherInv) {
-          const unpaid = data.invoices.find((i) => i.status !== "Paid") || data.invoices[0];
-          setSelectedVoucherInv(unpaid);
-        }
-      });
+      getChildFees(selectedId)
+        .then((data) => {
+          setFees(data);
+          // Keep the selected voucher only if it belongs to the child now shown (it goes stale
+          // when switching children, or after a payment changes its status).
+          setSelectedVoucherInv((current) => {
+            const invoices = data?.invoices || [];
+            const refreshed = current && invoices.find((i) => i.id === current.id);
+            if (refreshed) return refreshed;
+            return invoices.find((i) => i.status !== "Paid") || invoices[0] || null;
+          });
+        })
+        .catch((err) => setError(err?.response?.data?.message || "Could not load fees for this child."));
     }
   }
 

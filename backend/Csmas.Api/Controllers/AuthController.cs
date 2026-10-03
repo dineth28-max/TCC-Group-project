@@ -156,7 +156,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<MeResponse>> Me()
     {
         var userId = int.Parse(User.FindFirst("sub")!.Value);
-        var user = await _db.Users.Include(u => u.Institute).FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _db.Users.Include(u => u.Institute).Include(u => u.Branch).FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null)
         {
             return Unauthorized();
@@ -170,6 +170,8 @@ public class AuthController : ControllerBase
             user.InstituteId,
             user.Institute?.Name ?? string.Empty,
             user.BranchId,
+            user.Branch?.Name,
+            user.PhoneNumber,
             user.MustChangePassword));
     }
 
@@ -199,6 +201,32 @@ public class AuthController : ControllerBase
 
         user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
         user.MustChangePassword = false;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Lets any signed-in user correct their own display name and phone number.</summary>
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var fullName = request.FullName?.Trim() ?? "";
+        if (fullName.Length < 2 || fullName.Length > 120)
+        {
+            return BadRequest(new { message = "Full name must be between 2 and 120 characters." });
+        }
+        var phone = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+        if (phone is not null && (phone.Length > 20 || !phone.All(c => char.IsDigit(c) || c is '+' or ' ' or '-')))
+        {
+            return BadRequest(new { message = "Phone number may only contain digits, spaces, '+' and '-' (max 20 characters)." });
+        }
+
+        var userId = int.Parse(User.FindFirst("sub")!.Value);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null) return Unauthorized();
+
+        user.FullName = fullName;
+        user.PhoneNumber = phone;
         await _db.SaveChangesAsync();
         return NoContent();
     }

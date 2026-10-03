@@ -6,6 +6,8 @@ import {
   deleteTimetableSlot,
 } from "../api/timetable";
 import { listClasses } from "../api/classes";
+import { listBranches } from "../api/branches";
+import { useAuth } from "../auth/AuthContext";
 import AcademicCalendar from "../components/AcademicCalendar";
 import {
   CalendarClock,
@@ -28,6 +30,12 @@ const DAYS = [
 ];
 
 export default function TimetableBuilder() {
+  const { user } = useAuth();
+  const isSystemAdmin = user?.role === "SystemAdmin";
+  const [branches, setBranches] = useState([]);
+  // System Admins see one branch at a time — rooms are per branch, so mixing branches in one
+  // calendar makes "Hall A" at two different branches look like a double booking.
+  const [branchId, setBranchId] = useState("");
   const [slots, setSlots] = useState([]);
   const [classes, setClasses] = useState([]);
   const [viewMode, setViewMode] = useState("calendar"); // "calendar" | "table"
@@ -42,27 +50,42 @@ export default function TimetableBuilder() {
   const [loading, setLoading] = useState(false);
 
   async function load() {
+    if (isSystemAdmin && !branchId) return;
     try {
-      const data = await listTimetableSlots();
+      const data = await listTimetableSlots(isSystemAdmin ? { branchId } : {});
       setSlots(data || []);
     } catch (err) {
-      console.error("Error loading timetable slots:", err);
+      setError(err?.response?.data?.message || "Could not load the timetable. Please refresh the page.");
     }
   }
 
   useEffect(() => {
-    load();
-    listClasses().then((data) => {
-      setClasses(data || []);
-      if (data && data.length > 0) {
-        setForm((f) => ({ ...f, classId: String(data[0].id) }));
-      }
-    });
-  }, []);
+    listClasses()
+      .then((data) => setClasses(data || []))
+      .catch(() => setClasses([]));
+    if (isSystemAdmin) {
+      listBranches()
+        .then((data) => {
+          setBranches(data || []);
+          if (data && data.length > 0) setBranchId(String(data[0].id));
+        })
+        .catch(() => setError("Could not load branches. Please refresh the page."));
+    }
+  }, [isSystemAdmin]);
 
-  const selectedClass = classes.find(
-    (c) => String(c.id) === String(form.classId)
-  );
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchId, isSystemAdmin]);
+
+  const branchClasses = isSystemAdmin ? classes.filter((c) => String(c.branchId) === branchId) : classes;
+  // Keep the form's class valid for the branch on screen.
+  const effectiveClassId = branchClasses.some((c) => String(c.id) === String(form.classId))
+    ? form.classId
+    : branchClasses[0]
+      ? String(branchClasses[0].id)
+      : "";
+  const selectedClass = branchClasses.find((c) => String(c.id) === String(effectiveClassId));
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -75,7 +98,7 @@ export default function TimetableBuilder() {
     }
     setLoading(true);
     try {
-      await createTimetableSlot({ ...form, classId: Number(form.classId) });
+      await createTimetableSlot({ ...form, classId: Number(effectiveClassId) });
       await load();
       // Reset optional fields
       setForm((f) => ({ ...f, room: "" }));
@@ -89,12 +112,13 @@ export default function TimetableBuilder() {
   }
 
   async function handleDelete(id) {
-    if (!confirm("Are you sure you want to remove this timetable slot?")) return;
+    if (!window.confirm("Are you sure you want to remove this timetable slot?")) return;
+    setError(null);
     try {
       await deleteTimetableSlot(id);
       await load();
     } catch (err) {
-      alert("Could not remove slot: " + (err.response?.data?.message || err.message));
+      setError(err.response?.data?.message || "Could not remove this timetable slot.");
     }
   }
 
@@ -117,6 +141,21 @@ export default function TimetableBuilder() {
             </span>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+          {isSystemAdmin && (
+            <select
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+              aria-label="Branch"
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#00A389] bg-white"
+            >
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setViewMode("calendar")}
@@ -140,6 +179,7 @@ export default function TimetableBuilder() {
               <List size={14} />
               <span>Roster Table</span>
             </button>
+          </div>
           </div>
         </div>
 
@@ -259,11 +299,11 @@ export default function TimetableBuilder() {
                 </label>
                 <select
                   id="tt-class"
-                  value={form.classId}
+                  value={effectiveClassId}
                   onChange={(e) => setForm({ ...form, classId: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#00A389] transition bg-white"
                 >
-                  {classes.map((c) => (
+                  {branchClasses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.subject} — {c.teacherName ?? "No teacher assigned"}
                     </option>

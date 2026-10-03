@@ -14,12 +14,22 @@ export default function NotificationsManagement() {
   const [form, setForm] = useState({ subject: "", body: "" });
   const [log, setLog] = useState([]);
   const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   async function loadTemplates() {
-    setTemplates(await listTemplates());
+    try {
+      setTemplates(await listTemplates());
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load notification templates.");
+    }
   }
   async function loadLog() {
-    setLog(await getDeliveryLog());
+    try {
+      setLog(await getDeliveryLog());
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load the delivery log.");
+    }
   }
 
   useEffect(() => {
@@ -33,15 +43,31 @@ export default function NotificationsManagement() {
   }
 
   async function handleSave(eventType) {
-    await updateTemplate(eventType, form);
-    setEditing(null);
-    setMessage("Template updated.");
-    loadTemplates();
+    if (!form.subject.trim() || !form.body.trim()) {
+      setError("Subject and message body are both required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await updateTemplate(eventType, form);
+      setEditing(null);
+      setMessage("Template updated.");
+      loadTemplates();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not save this template.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <DashboardShell title="Notification Engine">
       {message && <p className="text-green-700 text-sm mb-3">{message}</p>}
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-3">{error}</div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
@@ -75,9 +101,10 @@ export default function NotificationsManagement() {
                     />
                     <button
                       onClick={() => handleSave(t.eventType)}
-                      className="bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer"
+                      disabled={saving}
+                      className="bg-[#2457FF] hover:bg-[#1b45db] text-white rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                     >
-                      Save Template
+                      {saving ? "Saving..." : "Save Template"}
                     </button>
                   </div>
                 ) : (

@@ -20,11 +20,49 @@ public class RiskController : TenantScopedController
 {
     private readonly AppDbContext _db;
     private readonly RiskScoringService _riskScoring;
+    private readonly AiRiskClient _aiClient;
 
-    public RiskController(AppDbContext db, RiskScoringService riskScoring)
+    public RiskController(AppDbContext db, RiskScoringService riskScoring, AiRiskClient aiClient)
     {
         _db = db;
         _riskScoring = riskScoring;
+        _aiClient = aiClient;
+    }
+
+    /// <summary>What the AI model was trained on and how well it scored on held-out students.</summary>
+    [HttpGet("model")]
+    public async Task<ActionResult<RiskModelResponse>> ModelInfo()
+    {
+        var info = await _aiClient.GetModelInfo();
+        if (info is null)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { message = "The AI service is unavailable right now — try again shortly." });
+        }
+        return Ok(RiskModelResponse.From(info));
+    }
+
+    /// <summary>
+    /// Retrains the model on this institute's current student records (labelled by who actually
+    /// dropped out), then re-scores every active student with the new model.
+    /// </summary>
+    [HttpPost("model/train")]
+    [Authorize(Roles = "SystemAdmin")]
+    public async Task<ActionResult<RiskModelTrainResponse>> TrainModel()
+    {
+        var (model, error) = await _riskScoring.TrainModelFromStudentRecords();
+        if (model is null)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = error });
+        }
+
+        var activeIds = await _db.Students
+            .Where(s => s.Status == StudentStatus.Active)
+            .Select(s => s.Id)
+            .ToListAsync();
+        var scored = await _riskScoring.RecomputeForStudents(activeIds);
+
+        return Ok(new RiskModelTrainResponse(RiskModelResponse.From(model), scored));
     }
 
     [HttpGet]
@@ -97,18 +135,17 @@ public class RiskController : TenantScopedController
             .Select(e => e.StudentId)
             .ToListAsync();
 
-        var succeededIds = new List<int>();
-        foreach (var studentId in studentIds)
+        var startedAt = DateTime.UtcNow;
+        var scored = await _riskScoring.RecomputeForStudents(studentIds);
+        if (scored == 0 && studentIds.Count > 0)
         {
-            if (await _riskScoring.RecomputeForStudent(studentId))
-            {
-                succeededIds.Add(studentId);
-            }
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { message = "The AI service is unavailable right now — could not score this class." });
         }
 
         var rows = await _db.RiskScores
             .Include(r => r.Student).ThenInclude(s => s!.Branch)
-            .Where(r => succeededIds.Contains(r.StudentId))
+            .Where(r => studentIds.Contains(r.StudentId) && r.ComputedAt >= startedAt)
             .OrderByDescending(r => r.Score)
             .ToListAsync();
 
@@ -116,8 +153,8 @@ public class RiskController : TenantScopedController
             classId,
             schoolClass.Subject,
             studentIds.Count,
-            succeededIds.Count,
-            studentIds.Count - succeededIds.Count,
+            rows.Count,
+            studentIds.Count - rows.Count,
             rows.Select(r => ToResponse(r, r.Student!)).ToList()));
     }
 

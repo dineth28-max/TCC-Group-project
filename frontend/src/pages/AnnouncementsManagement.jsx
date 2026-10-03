@@ -8,7 +8,11 @@ export default function AnnouncementsManagement() {
   const [error, setError] = useState(null);
 
   async function load() {
-    setAnnouncements(await listAnnouncements());
+    try {
+      setAnnouncements(await listAnnouncements());
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load announcements. Please refresh the page.");
+    }
   }
 
   useEffect(() => {
@@ -28,8 +32,14 @@ export default function AnnouncementsManagement() {
   }
 
   async function handleDelete(id) {
-    await deleteAnnouncement(id);
-    load();
+    if (!window.confirm("Delete this announcement? Parents will no longer see it.")) return;
+    setError(null);
+    try {
+      await deleteAnnouncement(id);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not delete this announcement.");
+    }
   }
 
   return (

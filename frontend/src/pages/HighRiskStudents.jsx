@@ -1,12 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardShell from "./DashboardShell";
-import { listRiskStudents, predictStudent, predictClass } from "../api/risk";
+import { listRiskStudents, predictStudent, predictClass, getRiskModel, trainRiskModel } from "../api/risk";
 import { listStudents } from "../api/students";
 import { listBranches } from "../api/branches";
 import { listClasses } from "../api/classes";
 import { useAuth } from "../auth/AuthContext";
 import { ShieldAlert, Search, Sparkles, AlertTriangle, CheckCircle2, ChevronRight, Activity } from "lucide-react";
+
+const PAGE_SIZE = 50;
+
+const FEATURE_LABELS = {
+  attendance_rate: "Attendance rate",
+  late_rate: "Late rate",
+  financial_issues: "Has overdue fees",
+  overdue_invoice_count: "Overdue invoices",
+  engagement_score: "Engagement",
+  semester: "Time enrolled",
+  classes_enrolled: "Classes enrolled",
+};
+
+const percent = (value) => `${Math.round((value || 0) * 1000) / 10}%`;
+
 
 const LEVEL_STYLES = {
   High: "bg-red-50 text-red-700 border-red-200",
@@ -35,6 +50,21 @@ export default function HighRiskStudents() {
   const [lookupError, setLookupError] = useState(null);
   const [predictingId, setPredictingId] = useState(null);
   const [predictionResult, setPredictionResult] = useState(null);
+  const [model, setModel] = useState(null);
+  const [modelError, setModelError] = useState(null);
+  const [training, setTraining] = useState(false);
+  const [trainMessage, setTrainMessage] = useState(null);
+  const [tableFilter, setTableFilter] = useState("");
+  const [page, setPage] = useState(0);
+
+  const filteredStudents = useMemo(() => {
+    const term = tableFilter.trim().toLowerCase();
+    if (!term) return students;
+    return students.filter((s) => s.fullName.toLowerCase().includes(term) || s.studentCode.toLowerCase().includes(term));
+  }, [students, tableFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pagedStudents = filteredStudents.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
 
   async function handleLookup() {
     if (!lookupQuery.trim()) return;
@@ -81,10 +111,37 @@ export default function HighRiskStudents() {
       if (riskLevel) params.riskLevel = riskLevel;
       const data = await listRiskStudents(params);
       setStudents(data);
-    } catch {
-      setError("Could not load high risk students registry.");
+      setPage(0);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Could not load the risk register. Please try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadModel() {
+    try {
+      setModel(await getRiskModel());
+      setModelError(null);
+    } catch (err) {
+      setModelError(err?.response?.data?.message || "Could not reach the AI service.");
+    }
+  }
+
+  async function handleTrainModel() {
+    if (!window.confirm("Retrain the AI model on the current student records and re-score every active student?")) return;
+    setTraining(true);
+    setTrainMessage(null);
+    setModelError(null);
+    try {
+      const result = await trainRiskModel();
+      setModel(result.model);
+      setTrainMessage(`Model retrained on ${result.model.trainingRows} students and ${result.studentsScored} active students re-scored.`);
+      load();
+    } catch (err) {
+      setModelError(err?.response?.data?.message || "Could not retrain the model.");
+    } finally {
+      setTraining(false);
     }
   }
 
@@ -114,6 +171,10 @@ export default function HighRiskStudents() {
   }, [branchId, classId, riskLevel]);
 
   useEffect(() => {
+    loadModel();
+  }, []);
+
+  useEffect(() => {
     if (user?.role === "SystemAdmin") {
       listBranches().then(setBranches).catch(() => setBranches([]));
     }
@@ -134,6 +195,86 @@ export default function HighRiskStudents() {
         <p className="text-xs text-slate-500 mt-1">
           Machine-learning powered dropout & attendance risk scoring to enable early proactive interventions
         </p>
+      </div>
+
+      {/* Trained Model Card */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm">Prediction Model</h3>
+            {model?.loaded === false ? (
+              <p className="text-xs text-amber-700 mt-1">No model is loaded in the AI service yet.</p>
+            ) : model ? (
+              <p className="text-xs text-slate-500 mt-1">
+                Random Forest trained{" "}
+                {model.source === "csmas" ? (
+                  <>
+                    on <strong className="text-slate-800">{model.trainingRows}</strong> students from this system (
+                    <strong className="text-slate-800">{model.dropouts}</strong> of whom left the institute)
+                  </>
+                ) : (
+                  <span className="text-amber-700 font-semibold">on synthetic bootstrap data — retrain on your student records</span>
+                )}
+                {model.trainedAt && <> · {new Date(model.trainedAt).toLocaleString()}</>}
+              </p>
+            ) : (
+              !modelError && <p className="text-xs text-slate-400 mt-1">Loading model details...</p>
+            )}
+          </div>
+          {user?.role === "SystemAdmin" && (
+            <button
+              type="button"
+              onClick={handleTrainModel}
+              disabled={training}
+              className="shrink-0 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-wait text-white text-xs font-semibold rounded-xl px-4 py-2 transition cursor-pointer"
+            >
+              {training ? "Training & re-scoring..." : "Retrain on Current Data"}
+            </button>
+          )}
+        </div>
+
+        {model?.loaded !== false && model && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+            {[
+              ["Accuracy", percent(model.accuracy)],
+              ["ROC-AUC", (model.rocAuc ?? 0).toFixed(3)],
+              ["Precision (dropouts)", model.precision == null ? "—" : percent(model.precision)],
+              ["Recall (dropouts)", model.recall == null ? "—" : percent(model.recall)],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3">
+                <div className="text-[11px] text-slate-500 font-medium">{label}</div>
+                <div className="text-lg font-bold text-slate-900 mt-0.5">{value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {model?.testRows > 0 && (
+          <p className="text-[11px] text-slate-400 mt-2">Measured on {model.testRows} students held out from training.</p>
+        )}
+
+        {model?.featureImportances && (
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold text-slate-600 mb-2">What the model relies on most</p>
+            <div className="space-y-1.5">
+              {Object.entries(model.featureImportances).map(([feature, weight]) => (
+                <div key={feature} className="flex items-center gap-3 text-[11px]">
+                  <span className="w-32 shrink-0 text-slate-600">{FEATURE_LABELS[feature] || feature}</span>
+                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#2457FF] rounded-full" style={{ width: `${Math.round(weight * 100)}%` }} />
+                  </div>
+                  <span className="w-10 text-right font-mono text-slate-500">{percent(weight)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {modelError && (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mt-3">{modelError}</p>
+        )}
+        {trainMessage && (
+          <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mt-3">{trainMessage}</p>
+        )}
       </div>
 
       {/* Student Lookup & Interactive Prediction Card */}
@@ -197,6 +338,9 @@ export default function HighRiskStudents() {
                 {predictionResult.riskLevel} Risk (Score: {predictionResult.score})
               </span>
             </div>
+            <p className="text-slate-600 mb-2">
+              The trained model estimates a <strong>{predictionResult.score}%</strong> probability that this student drops out.
+            </p>
             <p className="font-semibold text-slate-600 mb-1">Key Contributing Risk Factors:</p>
             <ul className="list-disc list-inside text-slate-600 space-y-0.5 pl-1">
               {predictionResult.topFactors.map((f, i) => <li key={i}>{f}</li>)}
@@ -246,6 +390,20 @@ export default function HighRiskStudents() {
           <option value="Low">Low</option>
         </select>
 
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={tableFilter}
+            onChange={(e) => {
+              setTableFilter(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Filter list by name or code..."
+            aria-label="Filter risk list"
+            className="w-56 bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:bg-white outline-none"
+          />
+        </div>
+
         <button
           onClick={handlePredictClass}
           disabled={!classId || classPredicting}
@@ -268,13 +426,22 @@ export default function HighRiskStudents() {
       )}
 
       {/* Scored Students Table */}
-      {loading ? (
+      {error ? (
+        <div className="flex items-center justify-between text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+          <span>{error}</span>
+          <button type="button" onClick={load} className="font-semibold underline cursor-pointer">
+            Retry
+          </button>
+        </div>
+      ) : loading ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
           Loading risk scores...
         </div>
-      ) : students.length === 0 ? (
+      ) : filteredStudents.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
-          No scored students yet. Scores update as attendance and payment records are captured.
+          {students.length === 0
+            ? "No scored students match these filters yet. Scores update as attendance and payment records are captured."
+            : "No students in this list match your filter."}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -291,7 +458,7 @@ export default function HighRiskStudents() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {students.map((s) => (
+                {pagedStudents.map((s) => (
                   <tr key={s.studentId} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-5">
                       <div className="font-semibold text-slate-900 text-xs">{s.fullName}</div>
@@ -316,6 +483,33 @@ export default function HighRiskStudents() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 font-medium">
+            <span>
+              Showing {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, filteredStudents.length)} of{" "}
+              {filteredStudents.length} scored students
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="px-3 py-1 rounded-lg border border-slate-200 bg-white font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Previous
+              </button>
+              <span>
+                Page {currentPage + 1} of {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage >= pageCount - 1}
+                className="px-3 py-1 rounded-lg border border-slate-200 bg-white font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}

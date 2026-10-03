@@ -45,6 +45,55 @@ public class TeacherRevenueController : TenantScopedController
         return Ok(new TeacherRevenueOverviewResponse(teachers, earnings.Sum(e => e.CommissionAmount)));
     }
 
+    /// <summary>Per-class revenue for the Class Revenue page, filtered by payment date (inclusive).</summary>
+    [HttpGet("by-class")]
+    public async Task<ActionResult<List<ClassRevenueRow>>> ByClass([FromQuery] string? from, [FromQuery] string? to)
+    {
+        var fromAt = DateOnly.TryParse(from, out var fromDate) ? fromDate.ToDateTime(TimeOnly.MinValue) : DateTime.MinValue;
+        var toAt = DateOnly.TryParse(to, out var toDate) ? toDate.ToDateTime(TimeOnly.MinValue).AddDays(1) : DateTime.MaxValue;
+        if (fromAt >= toAt) return BadRequest(new { message = "The start date must be on or before the end date." });
+
+        var payments = _db.Payments.Where(p => p.PaidAt >= fromAt && p.PaidAt < toAt);
+        if (IsBranchScoped) payments = payments.Where(p => p.Invoice!.Student!.BranchId == CurrentBranchId);
+        var paymentTotals = await payments
+            .GroupBy(p => p.Invoice!.ClassId)
+            .Select(g => new
+            {
+                ClassId = g.Key,
+                Total = g.Sum(p => p.Amount),
+                Online = g.Sum(p => p.Method.StartsWith("Online") ? p.Amount : 0),
+                Count = g.Count(),
+            })
+            .ToDictionaryAsync(x => x.ClassId);
+
+        var earnings = _db.TeacherEarnings.Where(e => e.CreatedAt >= fromAt && e.CreatedAt < toAt);
+        if (IsBranchScoped) earnings = earnings.Where(e => e.TeacherUser!.BranchId == CurrentBranchId);
+        var earningTotals = await earnings
+            .GroupBy(e => e.PaymentTransaction!.Invoice!.ClassId)
+            .Select(g => new { ClassId = g.Key, Net = g.Sum(e => e.NetAmount), Commission = g.Sum(e => e.CommissionAmount) })
+            .ToDictionaryAsync(x => x.ClassId);
+
+        var classIds = paymentTotals.Keys.Union(earningTotals.Keys).ToList();
+        var classes = await _db.Classes
+            .Include(c => c.Branch)
+            .Include(c => c.TeacherUser)
+            .Where(c => classIds.Contains(c.Id))
+            .ToListAsync();
+
+        var rows = classes.Select(c =>
+            {
+                paymentTotals.TryGetValue(c.Id, out var paid);
+                earningTotals.TryGetValue(c.Id, out var earned);
+                return new ClassRevenueRow(
+                    c.Id, c.Subject, c.BranchId, c.Branch?.Name ?? "", c.TeacherUserId, c.TeacherUser?.FullName,
+                    paid?.Total ?? 0, paid?.Online ?? 0, earned?.Net ?? 0, earned?.Commission ?? 0, paid?.Count ?? 0);
+            })
+            .OrderByDescending(r => r.TotalCollected)
+            .ToList();
+
+        return Ok(rows);
+    }
+
     [HttpGet("transactions")]
     public async Task<ActionResult<List<TeacherEarningRow>>> Transactions(
         [FromQuery] int? teacherId, [FromQuery] string? payoutStatus, [FromQuery] string? dateFrom, [FromQuery] string? dateTo)

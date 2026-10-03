@@ -11,9 +11,13 @@ export default function AdminTeacherRevenueTransactions() {
   const [filters, setFilters] = useState({ teacherId: "", payoutStatus: "", dateFrom: "", dateTo: "" });
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [payingId, setPayingId] = useState(null);
 
   useEffect(() => {
-    listUsers({ role: "Teacher" }).then(setTeachers);
+    listUsers({ role: "Teacher" })
+      .then(setTeachers)
+      .catch(() => setTeachers([]));
   }, []);
 
   async function load() {
@@ -25,6 +29,9 @@ export default function AdminTeacherRevenueTransactions() {
     try {
       const data = await listTeacherRevenueTransactions(params);
       setRows(data);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load revenue transactions. Retrying automatically...");
     } finally {
       setLoading(false);
     }
@@ -38,8 +45,16 @@ export default function AdminTeacherRevenueTransactions() {
   }, [filters]);
 
   async function handleMarkPaid(id) {
-    await markTeacherEarningPaid(id);
-    load();
+    if (!window.confirm("Mark this earning as paid out to the teacher? This is recorded in the audit log.")) return;
+    setPayingId(id);
+    try {
+      await markTeacherEarningPaid(id);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not mark this earning as paid.");
+    } finally {
+      setPayingId(null);
+    }
   }
 
   const formatCurrency = (val) =>
@@ -117,6 +132,10 @@ export default function AdminTeacherRevenueTransactions() {
         </div>
       </div>
 
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">{error}</div>
+      )}
+
       {/* Transactions Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -174,9 +193,10 @@ export default function AdminTeacherRevenueTransactions() {
                       {r.payoutStatus !== "Paid" && (
                         <button
                           onClick={() => handleMarkPaid(r.id)}
-                          className="bg-blue-50 text-[#2457FF] hover:bg-blue-100 border border-blue-200 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer"
+                          disabled={payingId === r.id}
+                          className="bg-blue-50 text-[#2457FF] hover:bg-blue-100 border border-blue-200 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                         >
-                          Mark Paid
+                          {payingId === r.id ? "Saving..." : "Mark Paid"}
                         </button>
                       )}
                     </td>

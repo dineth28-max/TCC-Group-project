@@ -35,6 +35,21 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { config, response } = error;
+
+    // Pages show err.response.data.message — make sure every failure has a human-readable one,
+    // not just the ones the backend explicitly worded (rate limit, server down, network loss).
+    if (!response) {
+      error.response = { status: 0, data: { message: "Cannot reach the server. Check your connection and try again." } };
+      return Promise.reject(error);
+    }
+    if (response.status === 429) {
+      response.data = { message: "Too many requests in a short time. Please wait a few seconds and try again." };
+      return Promise.reject(error);
+    }
+    if (response.status >= 500 && !response.data?.message) {
+      response.data = { message: "The server ran into a problem. Please try again shortly." };
+    }
+
     const isAuthEndpoint = config?.url?.startsWith("/auth/");
     if (response?.status !== 401 || isAuthEndpoint || config._retried) {
       return Promise.reject(error);

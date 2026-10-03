@@ -17,27 +17,16 @@ import {
   Lock,
   Building2,
   CalendarClock,
-  FileText,
   CreditCard,
   TrendingUp,
   Landmark,
-  Package,
-  Receipt,
-  Wallet,
-  Camera,
-  Trash2,
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
-  Check,
-  Building,
-  KeyRound,
-  ExternalLink,
-  Sparkles,
   Info,
-  DollarSign,
-  Layers,
 } from "lucide-react";
+
+const updateMyProfile = (payload) => apiClient.put("/auth/profile", payload);
 
 export default function SettingsManagement() {
   const { user, refreshUser } = useAuth();
@@ -46,25 +35,20 @@ export default function SettingsManagement() {
   // Active navigation tab
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Profile Form state
-  const nameParts = (user?.fullName || "Asha Perera").trim().split(" ");
-  const defaultFirstName = nameParts[0] || "Asha";
-  const defaultLastName = nameParts.slice(1).join(" ") || "Perera";
-
+  // Profile Form state (real values from the signed-in account)
   const [profileForm, setProfileForm] = useState({
-    firstName: defaultFirstName,
-    lastName: defaultLastName,
-    email: user?.email || "admin@demo.csmas",
-    phone: "077 234 5678",
+    fullName: user?.fullName || "",
+    phone: user?.phoneNumber || "",
   });
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(null);
   const [profileError, setProfileError] = useState(null);
 
   // Appearance Form state
   const [selectedThemeColor, setSelectedThemeColor] = useState("#00A389");
-  const [uiMode, setUiMode] = useState("light");
+  const [savingAppearance, setSavingAppearance] = useState(false);
   const [appearanceSuccess, setAppearanceSuccess] = useState(null);
+  const [appearanceError, setAppearanceError] = useState(null);
 
   // Password Form state
   const [passwordForm, setPasswordForm] = useState({
@@ -78,9 +62,9 @@ export default function SettingsManagement() {
 
   // Institute Settings Form state
   const [instituteForm, setInstituteForm] = useState({
-    name: user?.instituteName || "Colombo Tuition Institute",
-    address: "123 Galle Road, Colombo 03",
-    contactEmail: "admin@colombotuition.lk",
+    name: user?.instituteName || "",
+    address: "",
+    contactEmail: "",
     logoUrl: "",
     themeColor: "#00A389",
     attendanceThresholdPercent: "75",
@@ -122,25 +106,6 @@ export default function SettingsManagement() {
   const [splitError, setSplitError] = useState(null);
   const [simFee, setSimFee] = useState("5000");
 
-  // Invoice Schedule Form state
-  const [scheduleForm, setScheduleForm] = useState({
-    billingDay: "1",
-    graceDays: "10",
-    autoSms: true,
-    autoEmail: true,
-    overdueWarning: true,
-  });
-  const [scheduleSuccess, setScheduleSuccess] = useState(null);
-
-  // Invoice Template Form state
-  const [templateForm, setTemplateForm] = useState({
-    prefix: "INV-2026-",
-    taxRegistration: "PV-88912-TUITION",
-    signatoryTitle: "Registrar / Finance Bursar",
-    footerTerms: "Tuition fees paid are strictly non-refundable and non-transferable across terms.",
-  });
-  const [templateSuccess, setTemplateSuccess] = useState(null);
-
   // Global loading
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -158,7 +123,7 @@ export default function SettingsManagement() {
         if (settingsData.status === "fulfilled" && settingsData.value) {
           const s = settingsData.value;
           setInstituteForm({
-            name: s.name || "Colombo Tuition Institute",
+            name: s.name || "",
             address: s.address || "",
             contactEmail: s.contactEmail || "",
             logoUrl: s.logoUrl || "",
@@ -203,34 +168,51 @@ export default function SettingsManagement() {
     loadData();
   }, []);
 
-  // Compute initials
-  const initials = useMemo(() => {
-    const f = profileForm.firstName?.trim()?.[0] || "A";
-    const l = profileForm.lastName?.trim()?.[0] || "P";
-    return (f + l).toUpperCase();
-  }, [profileForm.firstName, profileForm.lastName]);
-
-  // Handle Photo Upload
-  function handleAvatarUpload(e) {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatarUrl(url);
-      setProfileSuccess("Profile photo updated.");
-      setTimeout(() => setProfileSuccess(null), 3500);
-    }
-  }
-
   // Handle Profile Save
   async function handleSaveProfile(e) {
     e.preventDefault();
+    if (savingProfile) return;
     setProfileSuccess(null);
     setProfileError(null);
+    if (profileForm.fullName.trim().length < 2) {
+      setProfileError("Please enter your full name.");
+      return;
+    }
+    setSavingProfile(true);
     try {
-      setProfileSuccess("Personal profile saved successfully.");
+      await updateMyProfile({ fullName: profileForm.fullName.trim(), phoneNumber: profileForm.phone.trim() || null });
+      await refreshUser();
+      setProfileSuccess("Your profile was saved.");
       setTimeout(() => setProfileSuccess(null), 4000);
-    } catch {
-      setProfileError("Could not update profile.");
+    } catch (err) {
+      setProfileError(err.response?.data?.message || "Could not save your profile.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  // Handle Appearance Save — the accent colour is stored on the institute record.
+  async function handleSaveAppearance() {
+    if (savingAppearance) return;
+    setSavingAppearance(true);
+    setAppearanceSuccess(null);
+    setAppearanceError(null);
+    try {
+      await updateSettings({
+        name: instituteForm.name,
+        address: instituteForm.address || null,
+        contactEmail: instituteForm.contactEmail || null,
+        logoUrl: instituteForm.logoUrl || null,
+        themeColor: selectedThemeColor,
+        attendanceThresholdPercent: Number(instituteForm.attendanceThresholdPercent),
+      });
+      setInstituteForm((f) => ({ ...f, themeColor: selectedThemeColor }));
+      setAppearanceSuccess("Brand colour saved.");
+      setTimeout(() => setAppearanceSuccess(null), 3500);
+    } catch (err) {
+      setAppearanceError(err.response?.data?.message || "Could not save the brand colour.");
+    } finally {
+      setSavingAppearance(false);
     }
   }
 
@@ -446,16 +428,9 @@ export default function SettingsManagement() {
                 <div className="space-y-1">
                   <TabButton
                     id="schedule"
-                    label="Invoice Schedule"
+                    label="Billing Cycle"
                     icon={CalendarClock}
                     active={activeTab === "schedule"}
-                    onClick={setActiveTab}
-                  />
-                  <TabButton
-                    id="template"
-                    label="Invoice Template"
-                    icon={FileText}
-                    active={activeTab === "template"}
                     onClick={setActiveTab}
                   />
                   <TabButton
@@ -482,51 +457,6 @@ export default function SettingsManagement() {
                 </div>
               </div>
 
-              {/* Category: Subscription */}
-              <div>
-                <p className="text-[11px] font-bold text-[#718A85] uppercase tracking-wider px-3 mb-2 select-none">
-                  Subscription
-                </p>
-                <div className="space-y-1">
-                  <TabButton
-                    id="plan"
-                    label="Plan &amp; Billing"
-                    icon={Package}
-                    active={activeTab === "plan"}
-                    onClick={setActiveTab}
-                  />
-                  <TabButton
-                    id="sub-payments"
-                    label="Subscription Payments"
-                    icon={Receipt}
-                    active={activeTab === "sub-payments"}
-                    onClick={setActiveTab}
-                  />
-                  <TabButton
-                    id="payment-method"
-                    label="Payment Method"
-                    icon={Wallet}
-                    active={activeTab === "payment-method"}
-                    onClick={setActiveTab}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Docked Plan Card matching reference screenshot */}
-            <div className="p-4 rounded-2xl bg-white border border-[#E3EBE8] shadow-2xs flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-[#1A2D2A]">Custom Plan</p>
-                <p className="text-[11px] text-[#718A85] font-medium">Active plan</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab("plan")}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#DCE6E2] text-xs font-semibold text-[#1A2D2A] hover:bg-slate-50 transition shadow-2xs cursor-pointer"
-              >
-                <CreditCard size={13} className="text-[#00A389]" />
-                <span>Billing</span>
-              </button>
             </div>
           </div>
 
@@ -542,7 +472,7 @@ export default function SettingsManagement() {
                 <div className="border-b border-[#E3EBE8]/80 pb-5">
                   <h2 className="text-lg font-bold text-[#1A2D2A] tracking-tight">Personal Profile</h2>
                   <p className="text-xs text-[#718A85] mt-0.5">
-                    Your name, photo and contact details across the platform.
+                    Your name and contact details across the platform.
                   </p>
                 </div>
 
@@ -552,83 +482,42 @@ export default function SettingsManagement() {
                     <span>{profileSuccess}</span>
                   </div>
                 )}
-
-                {/* Profile Headshot */}
-                <div className="space-y-3 pb-6 border-b border-[#E3EBE8]/80">
-                  <div>
-                    <h3 className="text-xs font-bold text-[#1A2D2A]">Profile Headshot</h3>
-                    <p className="text-[11px] text-[#718A85]">Upload an avatar image. Recommended size 400×400px.</p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#0E4940] to-[#00A389] text-white text-lg font-bold flex items-center justify-center shadow-xs border-2 border-white overflow-hidden">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{initials}</span>
-                        )}
-                      </div>
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" />
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#DCE6E2] text-xs font-semibold text-[#1A2D2A] hover:bg-slate-50 transition cursor-pointer shadow-2xs">
-                        <Camera size={14} className="text-[#00A389]" />
-                        <span>Change Photo</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                      </label>
-                      {avatarUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setAvatarUrl(null)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                          <span>Remove</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {profileError && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{profileError}</div>
+                )}
 
                 {/* Form Fields: First Name, Last Name, Email, Phone */}
                 <form onSubmit={handleSaveProfile} className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">First Name</label>
+                    <div className="sm:col-span-2">
+                      <label htmlFor="profile-name" className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Full Name</label>
                       <input
+                        id="profile-name"
                         type="text"
-                        value={profileForm.firstName}
-                        onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
+                        required
+                        maxLength={120}
+                        value={profileForm.fullName}
+                        onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                        placeholder="e.g. Asha"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Last Name</label>
+                      <label htmlFor="profile-email" className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Email Address</label>
                       <input
-                        type="text"
-                        value={profileForm.lastName}
-                        onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                        placeholder="e.g. Perera"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Email Address</label>
-                      <input
+                        id="profile-email"
                         type="email"
-                        value={profileForm.email}
-                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                        placeholder="name@csmas.lk"
+                        readOnly
+                        value={user?.email || ""}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-slate-500 bg-slate-100 outline-none cursor-not-allowed"
                       />
+                      <p className="text-[10px] text-[#718A85] mt-1">Your sign-in email can only be changed by another administrator.</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Phone Number</label>
+                      <label htmlFor="profile-phone" className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Phone Number</label>
                       <input
-                        type="text"
+                        id="profile-phone"
+                        type="tel"
+                        maxLength={20}
                         value={profileForm.phone}
                         onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
@@ -640,9 +529,10 @@ export default function SettingsManagement() {
                   <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      className="px-6 py-2.5 rounded-xl bg-[#00A389] hover:bg-[#008c75] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+                      disabled={savingProfile}
+                      className="px-6 py-2.5 rounded-xl bg-[#00A389] hover:bg-[#008c75] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                     >
-                      Save Profile Changes
+                      {savingProfile ? "Saving..." : "Save Profile Changes"}
                     </button>
                   </div>
                 </form>
@@ -657,7 +547,7 @@ export default function SettingsManagement() {
                 <div className="border-b border-[#E3EBE8]/80 pb-5">
                   <h2 className="text-lg font-bold text-[#1A2D2A] tracking-tight">Appearance &amp; Theme</h2>
                   <p className="text-xs text-[#718A85] mt-0.5">
-                    Customize your institute accent colors, theme contrast, and display density.
+                    Choose your institute's brand accent colour.
                   </p>
                 </div>
 
@@ -666,6 +556,9 @@ export default function SettingsManagement() {
                     <CheckCircle2 size={15} className="text-emerald-600" />
                     <span>{appearanceSuccess}</span>
                   </div>
+                )}
+                {appearanceError && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{appearanceError}</div>
                 )}
 
                 <div className="space-y-6">
@@ -713,42 +606,14 @@ export default function SettingsManagement() {
                     </div>
                   </div>
 
-                  {/* UI Mode Toggle */}
-                  <div className="pt-4 border-t border-[#E3EBE8]/80">
-                    <h3 className="text-xs font-bold text-[#1A2D2A] mb-1">Interface Color Scheme</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                      {[
-                        { id: "light", label: "Enterprise Light", desc: "Crisp emeralds & light slates (recommended)" },
-                        { id: "dark", label: "Dark OLED", desc: "High contrast dark canvas" },
-                        { id: "system", label: "System Sync", desc: "Follow OS preference" },
-                      ].map((mode) => (
-                        <button
-                          key={mode.id}
-                          type="button"
-                          onClick={() => setUiMode(mode.id)}
-                          className={`p-3.5 rounded-xl border text-left transition cursor-pointer ${
-                            uiMode === mode.id
-                              ? "border-[#00A389] bg-emerald-50/60 ring-1 ring-[#00A389]"
-                              : "border-[#E3EBE8] hover:bg-slate-50"
-                          }`}
-                        >
-                          <p className="text-xs font-bold text-[#1A2D2A]">{mode.label}</p>
-                          <p className="text-[10px] text-[#718A85] mt-1">{mode.desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="flex justify-end pt-3">
                     <button
                       type="button"
-                      onClick={() => {
-                        setAppearanceSuccess("Appearance settings saved.");
-                        setTimeout(() => setAppearanceSuccess(null), 3500);
-                      }}
-                      className="px-6 py-2.5 rounded-xl bg-[#00A389] hover:bg-[#008c75] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+                      onClick={handleSaveAppearance}
+                      disabled={savingAppearance}
+                      className="px-6 py-2.5 rounded-xl bg-[#00A389] hover:bg-[#008c75] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                     >
-                      Save Appearance Preferences
+                      {savingAppearance ? "Saving..." : "Save Brand Colour"}
                     </button>
                   </div>
                 </div>
@@ -1295,251 +1160,31 @@ export default function SettingsManagement() {
             )}
 
             {/* ---------------------------------------------------------------------
-                TAB 8: INVOICE SCHEDULE
+                TAB 8: BILLING CYCLE (read-only — this is how BillingService actually runs)
                 --------------------------------------------------------------------- */}
             {activeTab === "schedule" && (
               <div className="bg-white rounded-2xl border border-[#E3EBE8] shadow-xs p-7 sm:p-8 space-y-6">
                 <div className="border-b border-[#E3EBE8]/80 pb-5">
-                  <h2 className="text-lg font-bold text-[#1A2D2A] tracking-tight">Invoice Schedule &amp; Billing Cycles</h2>
+                  <h2 className="text-lg font-bold text-[#1A2D2A] tracking-tight">Billing Cycle</h2>
                   <p className="text-xs text-[#718A85] mt-0.5">
-                    Automated monthly tuition invoice dispatching, due date intervals, and payment reminders.
+                    How monthly invoices, reminders and overdue notices run. These rules are fixed for every institute.
                   </p>
                 </div>
-
-                {scheduleSuccess && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 size={15} className="text-emerald-600" />
-                    <span>{scheduleSuccess}</span>
-                  </div>
-                )}
-
-                <div className="space-y-5 max-w-xl">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">
-                        Monthly Invoicing Generation Day
-                      </label>
-                      <select
-                        value={scheduleForm.billingDay}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, billingDay: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                      >
-                        <option value="1">1st of every month</option>
-                        <option value="5">5th of every month</option>
-                        <option value="10">10th of every month</option>
-                        <option value="25">25th of every month</option>
-                      </select>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  {[
+                    ["Invoice generation", "Automatically on the 1st of every month, one invoice per active enrollment with an active fee structure."],
+                    ["Due date", "14 days after the invoice is generated."],
+                    ["Discounts", "Active sibling, scholarship and other discounts are applied when the invoice is generated."],
+                    ["Reminders", "Linked parents get an email and in-app reminder 7 days and 1 day before the due date."],
+                    ["Overdue", "Unpaid invoices are marked Overdue the day after the due date, and parents are notified."],
+                    ["Run manually", "Fee Management → Run Monthly Billing generates this month's invoices immediately (it never duplicates)."],
+                  ].map(([term, detail]) => (
+                    <div key={term} className="p-4 rounded-xl border border-[#E3EBE8] bg-slate-50/50">
+                      <dt className="font-bold text-[#1A2D2A]">{term}</dt>
+                      <dd className="text-[#627D77] mt-1">{detail}</dd>
                     </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">
-                        Payment Due Grace Period
-                      </label>
-                      <select
-                        value={scheduleForm.graceDays}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, graceDays: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                      >
-                        <option value="7">7 Days after generation</option>
-                        <option value="10">10 Days after generation</option>
-                        <option value="14">14 Days after generation</option>
-                        <option value="30">End of calendar month</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 pt-3">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={scheduleForm.autoEmail}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, autoEmail: e.target.checked })}
-                        className="h-4 w-4 rounded text-[#00A389] focus:ring-[#00A389]"
-                      />
-                      <span className="text-xs text-[#1A2D2A] font-medium">
-                        Automatically email printable invoice voucher to parents on generation
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={scheduleForm.overdueWarning}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, overdueWarning: e.target.checked })}
-                        className="h-4 w-4 rounded text-[#00A389] focus:ring-[#00A389]"
-                      />
-                      <span className="text-xs text-[#1A2D2A] font-medium">
-                        Trigger automated overdue notifications 3 days before cutoff
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="pt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setScheduleSuccess("Billing schedule and automated cycles saved.");
-                        setTimeout(() => setScheduleSuccess(null), 3500);
-                      }}
-                      className="px-6 py-2.5 rounded-xl bg-[#00A389] hover:bg-[#008c75] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
-                    >
-                      Save Invoice Schedule
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------------
-                TAB 9: INVOICE TEMPLATE
-                --------------------------------------------------------------------- */}
-            {activeTab === "template" && (
-              <div className="bg-white rounded-2xl border border-[#E3EBE8] shadow-xs p-7 sm:p-8 space-y-6">
-                <div className="border-b border-[#E3EBE8]/80 pb-5">
-                  <h2 className="text-lg font-bold text-[#1A2D2A] tracking-tight">Invoice &amp; Receipt Template</h2>
-                  <p className="text-xs text-[#718A85] mt-0.5">
-                    Customize invoice numbering prefixes, receipt disclaimers, and authorized signatories.
-                  </p>
-                </div>
-
-                {templateSuccess && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 size={15} className="text-emerald-600" />
-                    <span>{templateSuccess}</span>
-                  </div>
-                )}
-
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Invoice Number Prefix</label>
-                      <input
-                        type="text"
-                        value={templateForm.prefix}
-                        onChange={(e) => setTemplateForm({ ...templateForm, prefix: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none font-mono transition"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">
-                        Business / Tax Registration No
-                      </label>
-                      <input
-                        type="text"
-                        value={templateForm.taxRegistration}
-                        onChange={(e) => setTemplateForm({ ...templateForm, taxRegistration: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">Authorized Signatory Title</label>
-                      <input
-                        type="text"
-                        value={templateForm.signatoryTitle}
-                        onChange={(e) => setTemplateForm({ ...templateForm, signatoryTitle: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-[#2C4A44] mb-1.5">
-                        Receipt Footer Terms &amp; Disclaimer
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={templateForm.footerTerms}
-                        onChange={(e) => setTemplateForm({ ...templateForm, footerTerms: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#DCE6E2] text-xs text-[#1A2D2A] bg-slate-50/50 focus:bg-white focus:border-[#00A389] outline-none transition"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTemplateSuccess("Receipt template formatting saved.");
-                        setTimeout(() => setTemplateSuccess(null), 3500);
-                      }}
-                      className="px-6 py-2.5 rounded-xl bg-[#00A389] hover:bg-[#008c75] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
-                    >
-                      Save Receipt Template
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------------
-                TAB 10: SUBSCRIPTION & PLAN (Plan & Billing / Payments / Methods)
-                --------------------------------------------------------------------- */}
-            {(activeTab === "plan" || activeTab === "sub-payments" || activeTab === "payment-method") && (
-              <div className="bg-white rounded-2xl border border-[#E3EBE8] shadow-xs p-7 sm:p-8 space-y-6">
-                <div className="border-b border-[#E3EBE8]/80 pb-5">
-                  <h2 className="text-lg font-bold text-[#1A2D2A] tracking-tight">Subscription &amp; Platform License</h2>
-                  <p className="text-xs text-[#718A85] mt-0.5">
-                    Your institutional plan details, multi-tenant compute limits, and active billing status.
-                  </p>
-                </div>
-
-                {/* Plan Hero Card */}
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-[#0E4940] to-[#0A3731] text-white shadow-md relative overflow-hidden">
-                  <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-emerald-500/10 -skew-x-12" />
-                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wide">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>Active Enterprise License</span>
-                      </div>
-                      <h3 className="text-xl font-bold mt-2 tracking-tight">CSMAS Unlimited Campus Tier</h3>
-                      <p className="text-xs text-emerald-100/80 mt-1 max-w-md">
-                        Institutional multi-branch license with dedicated AI Risk Engine, counter payments terminal, and isolated data containers.
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-2xl font-extrabold text-white">Custom Tier</p>
-                      <p className="text-[11px] text-emerald-200">Renews Annually</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-emerald-800/60 text-xs">
-                    <div>
-                      <p className="text-[10px] text-emerald-300 uppercase font-semibold">Campuses</p>
-                      <p className="font-bold text-white text-sm mt-0.5">Unlimited</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-emerald-300 uppercase font-semibold">Active Students</p>
-                      <p className="font-bold text-white text-sm mt-0.5">Unlimited</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-emerald-300 uppercase font-semibold">AI Predictor</p>
-                      <p className="font-bold text-white text-sm mt-0.5">Continuous Active</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-emerald-300 uppercase font-semibold">SLA Uptime</p>
-                      <p className="font-bold text-white text-sm mt-0.5">99.9% Production</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Subscription Payment Card */}
-                <div className="p-5 rounded-2xl border border-[#E3EBE8] bg-[#F4F7F6]/60 flex items-center justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="h-10 w-10 rounded-xl bg-white border border-[#E3EBE8] flex items-center justify-center text-[#00A389] shadow-2xs">
-                      <Wallet size={20} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-[#1A2D2A]">Primary Billing Method</p>
-                      <p className="text-[11px] text-[#718A85]">Direct Institutional Contract Invoice</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-100 text-[#0E4940] text-xs font-bold">
-                    Good Standing
-                  </span>
-                </div>
+                  ))}
+                </dl>
               </div>
             )}
           </div>

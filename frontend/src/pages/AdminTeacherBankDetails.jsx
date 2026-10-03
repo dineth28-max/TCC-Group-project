@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardShell from "./DashboardShell";
 import { listUsers } from "../api/users";
 import { getTeacherBankDetails, saveTeacherBankDetails } from "../api/payments";
@@ -20,7 +20,7 @@ export default function AdminTeacherBankDetails() {
     setLoading(true);
     setListError(null);
     try {
-      const data = await listUsers(search ? { role: "Teacher", search } : { role: "Teacher" });
+      const data = await listUsers({ role: "Teacher" });
       setTeachers(data);
       if (data.length > 0 && !data.some((t) => t.id === selectedId)) setSelectedId(data[0].id);
       if (data.length === 0) setSelectedId(null);
@@ -45,15 +45,28 @@ export default function AdminTeacherBankDetails() {
     let stale = false;
     setError(null);
     setMessage(null);
-    getTeacherBankDetails(selectedId).then((data) => {
-      if (stale) return;
-      setDetails(data);
-      setForm({ accountHolderName: data.accountHolderName || "", bankName: data.bankName || "", accountNumber: "" });
-    });
+    getTeacherBankDetails(selectedId)
+      .then((data) => {
+        if (stale) return;
+        setDetails(data);
+        setForm({ accountHolderName: data.accountHolderName || "", bankName: data.bankName || "", accountNumber: "" });
+      })
+      .catch((err) => {
+        if (stale) return;
+        setDetails(null);
+        setError(err.response?.data?.message || "Could not load this teacher's bank details.");
+      });
     return () => {
       stale = true;
     };
   }, [selectedId]);
+
+  // Live filter — the full teacher list is small, so no server round-trip per keystroke.
+  const visibleTeachers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return teachers;
+    return teachers.filter((t) => t.fullName.toLowerCase().includes(term) || t.email.toLowerCase().includes(term));
+  }, [teachers, search]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -88,17 +101,11 @@ export default function AdminTeacherBankDetails() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && loadTeachers()}
-                placeholder="Search faculty..."
+                placeholder="Search faculty by name or email..."
+                aria-label="Search faculty"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs outline-none focus:bg-white"
               />
             </div>
-            <button
-              onClick={loadTeachers}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl px-3"
-            >
-              Search
-            </button>
           </div>
 
           {listError && <p className="px-4 py-2 text-red-600 text-xs">{listError}</p>}
@@ -106,10 +113,10 @@ export default function AdminTeacherBankDetails() {
           <ul className="max-h-[30rem] overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <li className="px-4 py-6 text-center text-slate-400 text-xs">Loading faculty list...</li>
-            ) : teachers.length === 0 ? (
+            ) : visibleTeachers.length === 0 ? (
               <li className="px-4 py-6 text-center text-slate-400 text-xs">No faculty found.</li>
             ) : (
-              teachers.map((t) => (
+              visibleTeachers.map((t) => (
                 <li key={t.id}>
                   <button
                     onClick={() => setSelectedId(t.id)}

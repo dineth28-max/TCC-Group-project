@@ -11,18 +11,25 @@ export default function TeacherDashboard() {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [todaySessions, setTodaySessions] = useState([]);
   const [performance, setPerformance] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    listMyClasses().then((data) => {
-      setClasses(data);
-      if (data.length > 0) setSelectedClassId(String(data[0].id));
-    });
-    listSessions().then((all) => setTodaySessions(all.filter((s) => s.sessionDate === TODAY)));
+    listMyClasses()
+      .then((data) => {
+        setClasses(data);
+        if (data.length > 0) setSelectedClassId(String(data[0].id));
+      })
+      .catch((err) => setError(err?.response?.data?.message || "Could not load your classes. Please refresh the page."));
+    listSessions()
+      .then((all) => setTodaySessions(all.filter((s) => s.sessionDate === TODAY)))
+      .catch(() => setTodaySessions([]));
   }, []);
 
   useEffect(() => {
     if (!selectedClassId) return;
-    getClassPerformance(selectedClassId).then(setPerformance);
+    getClassPerformance(selectedClassId)
+      .then(setPerformance)
+      .catch(() => setPerformance(null));
   }, [selectedClassId]);
 
   return (
@@ -31,6 +38,10 @@ export default function TeacherDashboard() {
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Faculty Dashboard</h1>
         <p className="text-xs text-slate-500 mt-1">Class sessions management, QR attendance verification, and student engagement</p>
       </div>
+
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">{error}</div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Sessions Card */}

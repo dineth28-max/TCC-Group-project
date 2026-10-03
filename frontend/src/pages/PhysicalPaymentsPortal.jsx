@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import DashboardShell from "./DashboardShell";
-import { listStudents } from "../api/students";
+import { listStudents, listBranches } from "../api/students";
 import { listInvoices, recordPayment } from "../api/fees";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -39,17 +39,23 @@ export default function PhysicalPaymentsPortal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recentReceipt, setRecentReceipt] = useState(null);
+  const [branches, setBranches] = useState([]);
 
   // Load active student list
   async function loadStudents() {
     try {
-      const data = await listStudents();
+      // Only active students can be billed at the counter.
+      const [data, branchData] = await Promise.all([
+        listStudents({ status: "Active" }),
+        listBranches().catch(() => []),
+      ]);
       setStudents(data || []);
+      setBranches(branchData || []);
       if (data && data.length > 0 && !selectedStudent) {
         handleSelectStudent(data[0]);
       }
     } catch (err) {
-      console.error("Failed to load students:", err);
+      setError(err.response?.data?.message || "Could not load the student list. Please refresh the page.");
     }
   }
 
@@ -68,7 +74,9 @@ export default function PhysicalPaymentsPortal() {
         setPayAmount("");
       }
     } catch (err) {
-      console.error("Failed to load student invoices:", err);
+      setInvoices([]);
+      setSelectedInvoice(null);
+      setError(err.response?.data?.message || "Could not load this student's invoices. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -102,7 +110,7 @@ export default function PhysicalPaymentsPortal() {
       (s) =>
         s.fullName.toLowerCase().includes(q) ||
         (s.studentCode && s.studentCode.toLowerCase().includes(q)) ||
-        (s.contactNumber && s.contactNumber.includes(q))
+        (s.contactPhone && s.contactPhone.includes(q))
     );
   }, [students, searchQuery]);
 
@@ -143,11 +151,12 @@ export default function PhysicalPaymentsPortal() {
 
       // Generate receipt
       const receiptData = {
-        receiptNo: `REC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
+        // Traceable to the invoice it settled (and unique per payment via the timestamp).
+        receiptNo: `RCPT-${selectedInvoice.id}-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}`,
         date: new Date().toLocaleString(),
         studentName: selectedStudent.fullName,
         studentCode: selectedStudent.studentCode || `STU-${selectedStudent.id}`,
-        branchName: selectedStudent.branchName || "Main Branch Campus",
+        branchName: branches.find((b) => b.id === selectedStudent.branchId)?.name || "",
         subject: selectedInvoice.subject,
         billingPeriod: selectedInvoice.billingPeriod,
         amountPaid: amountToPayNum,
@@ -232,7 +241,7 @@ export default function PhysicalPaymentsPortal() {
               {filteredStudents.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-6">No students found.</p>
               ) : (
-                filteredStudents.map((s) => {
+                filteredStudents.slice(0, 50).map((s) => {
                   const isSelected = selectedStudent?.id === s.id;
                   return (
                     <button
@@ -255,6 +264,11 @@ export default function PhysicalPaymentsPortal() {
                   );
                 })
               )}
+              {filteredStudents.length > 50 && (
+                <p className="text-[11px] text-slate-400 text-center py-2">
+                  Showing 50 of {filteredStudents.length} — type a name or code to narrow the list.
+                </p>
+              )}
             </div>
 
             {/* Selected Student Card */}
@@ -264,7 +278,7 @@ export default function PhysicalPaymentsPortal() {
                 <p className="font-bold text-slate-900 text-sm">{selectedStudent.fullName}</p>
                 <div className="text-[11px] text-slate-500 space-y-0.5">
                   <p>Code: <strong className="text-slate-700 font-mono">{selectedStudent.studentCode || `STU-${selectedStudent.id}`}</strong></p>
-                  <p>Contact: {selectedStudent.contactNumber || "None registered"}</p>
+                  <p>Contact: {selectedStudent.contactPhone || "None registered"}</p>
                 </div>
               </div>
             )}

@@ -51,6 +51,74 @@ public class AiPredictResponse
     public double RiskProbability { get; set; }
 }
 
+/// <summary>One labelled training example: a student's features plus whether they actually
+/// dropped out (their record is Inactive).</summary>
+public class AiTrainingRow : AiPredictRequest
+{
+    [JsonPropertyName("dropout")]
+    public int Dropout { get; set; }
+}
+
+/// <summary>What the AI service reports about its current model (also returned by /train).</summary>
+public class AiModelInfo
+{
+    [JsonPropertyName("loaded")]
+    public bool Loaded { get; set; } = true;
+
+    /// <summary>"csmas" when trained on this system's own student records; "synthetic-bootstrap"
+    /// for the placeholder model baked into the image before the first real training run.</summary>
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
+
+    [JsonPropertyName("trained_at")]
+    public DateTime? TrainedAt { get; set; }
+
+    [JsonPropertyName("training_rows")]
+    public int TrainingRows { get; set; }
+
+    [JsonPropertyName("dropouts")]
+    public int Dropouts { get; set; }
+
+    [JsonPropertyName("test_rows")]
+    public int TestRows { get; set; }
+
+    [JsonPropertyName("accuracy")]
+    public double Accuracy { get; set; }
+
+    [JsonPropertyName("roc_auc")]
+    public double RocAuc { get; set; }
+
+    [JsonPropertyName("precision")]
+    public double? Precision { get; set; }
+
+    [JsonPropertyName("recall")]
+    public double? Recall { get; set; }
+
+    [JsonPropertyName("feature_importances")]
+    public Dictionary<string, double>? FeatureImportances { get; set; }
+}
+
+/// <summary>Browser-facing view of AiModelInfo (camelCase, unlike the snake_case AI wire format).</summary>
+public record RiskModelResponse(
+    bool Loaded,
+    string? Source,
+    DateTime? TrainedAt,
+    int TrainingRows,
+    int Dropouts,
+    int TestRows,
+    double Accuracy,
+    double RocAuc,
+    double? Precision,
+    double? Recall,
+    Dictionary<string, double>? FeatureImportances)
+{
+    public static RiskModelResponse From(AiModelInfo m) => new(
+        m.Loaded, m.Source, m.TrainedAt, m.TrainingRows, m.Dropouts, m.TestRows,
+        m.Accuracy, m.RocAuc, m.Precision, m.Recall, m.FeatureImportances);
+}
+
+public record RiskModelTrainResponse(RiskModelResponse Model, int StudentsScored);
+
 public record RiskStudentResponse(
     int StudentId,
     string StudentCode,

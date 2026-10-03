@@ -25,14 +25,20 @@ export default function StudentRegister() {
   const [created, setCreated] = useState(null);
 
   useEffect(() => {
-    listBranches().then((data) => {
-      setBranches(data);
-      if (data.length > 0) {
-        setForm((f) => ({ ...f, branchId: String(data[0].id) }));
-      }
-    });
-    listClasses().then(setClasses);
+    listBranches()
+      .then((data) => {
+        setBranches(data);
+        if (data.length > 0) {
+          setForm((f) => ({ ...f, branchId: String(data[0].id) }));
+        }
+      })
+      .catch((err) => setError(err?.response?.data?.message || "Could not load branches. Please refresh the page."));
+    listClasses()
+      .then(setClasses)
+      .catch(() => setClasses([]));
   }, []);
+
+  const branchClasses = classes.filter((c) => String(c.branchId) === String(form.branchId));
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -168,7 +174,11 @@ export default function StudentRegister() {
               id="reg-branch"
               required
               value={form.branchId}
-              onChange={(e) => update("branchId", e.target.value)}
+              onChange={(e) => {
+                update("branchId", e.target.value);
+                // Selected classes belong to the previous branch.
+                update("classIds", []);
+              }}
               className="w-full border border-slate-300 rounded px-3 py-2 text-sm"
             >
               {branches.map((b) => (
@@ -232,13 +242,13 @@ export default function StudentRegister() {
 
         <div>
           <label className="block text-sm text-slate-600 mb-2">Enroll in classes</label>
-          {classes.length === 0 ? (
+          {branchClasses.length === 0 ? (
             <p className="text-xs text-slate-500">
-              No classes exist yet — create one on the Classes page, or register without enrolling now.
+              No classes exist at this branch yet — create one on the Classes page, or register without enrolling now.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {classes.map((c) => (
+              {branchClasses.map((c) => (
                 <label
                   key={c.id}
                   className={`px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition ${

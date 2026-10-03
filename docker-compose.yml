@@ -10,10 +10,14 @@ services:
     ports:
       - "3307:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      # TCP (127.0.0.1), not the "localhost" socket: on a fresh volume MySQL runs a temporary
+      # socket-only server during init, and a socket ping would report healthy before the real
+      # server is accepting the backend's network connections.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   backend:
     build:

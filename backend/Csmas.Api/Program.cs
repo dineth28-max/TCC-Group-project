@@ -71,6 +71,7 @@ builder.Services.AddHttpClient<Csmas.Api.Services.AiRiskClient>(client =>
 });
 builder.Services.AddScoped<Csmas.Api.Services.RiskFeatureBuilder>();
 builder.Services.AddScoped<Csmas.Api.Services.RiskScoringService>();
+builder.Services.AddHostedService<Csmas.Api.Services.RiskBackfillBackgroundService>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -159,7 +160,12 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 
     var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
-    await DbSeeder.SeedAsync(db, passwordHasher);
+    await DbSeeder.SeedAsync(
+        db,
+        passwordHasher,
+        scope.ServiceProvider.GetRequiredService<Csmas.Api.Services.SecretEncryptionService>(),
+        scope.ServiceProvider.GetRequiredService<Csmas.Api.Services.QrCodeService>(),
+        scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder"));
 }
 
 app.UseSwagger();

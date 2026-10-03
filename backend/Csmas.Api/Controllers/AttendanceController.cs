@@ -134,29 +134,39 @@ public class AttendanceController : TenantScopedController
     private async Task RecomputeAttendanceRates(decimal threshold)
     {
         var students = await _db.Students.Where(s => s.Status == StudentStatus.Active).ToListAsync();
+
+        // Two set-based queries for the whole roster rather than two per student — with a
+        // production-sized roster (thousands of students) the per-student version took minutes.
+        // Only sessions held on/after the student's enrollment date count — otherwise a
+        // newly-enrolled student is counted absent for sessions held before they joined,
+        // wrongly tanking their rate and flagging them the moment they enroll.
+        var sessionCounts = await _db.Enrollments
+            .Join(_db.Sessions, e => e.ClassId, s => s.ClassId, (e, s) => new { e.StudentId, e.EnrolledAt, Session = s })
+            .Where(x => x.Session.Status == SessionStatus.Closed && x.Session.StartedAt >= x.EnrolledAt)
+            .GroupBy(x => x.StudentId)
+            .Select(g => new { StudentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.StudentId, x => x.Count);
+
+        var presentOrLateCounts = await _db.Enrollments
+            .Join(_db.Sessions, e => e.ClassId, s => s.ClassId, (e, s) => new { e.StudentId, e.EnrolledAt, Session = s })
+            .Where(x => x.Session.Status == SessionStatus.Closed && x.Session.StartedAt >= x.EnrolledAt)
+            .Join(_db.Attendances, x => new { x.StudentId, SessionId = x.Session.Id }, a => new { a.StudentId, a.SessionId }, (x, a) => a)
+            .Where(a => a.Status != AttendanceStatus.Absent)
+            .GroupBy(a => a.StudentId)
+            .Select(g => new { StudentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.StudentId, x => x.Count);
+
         foreach (var student in students)
         {
-            // Only count sessions held on/after the student's enrollment date — otherwise a
-            // newly-enrolled student is counted absent for sessions held before they joined,
-            // wrongly tanking their rate and flagging them the moment they enroll.
-            var sessionIds = await _db.Enrollments
-                .Where(e => e.StudentId == student.Id)
-                .Join(_db.Sessions, e => e.ClassId, s => s.ClassId, (e, s) => new { e.EnrolledAt, Session = s })
-                .Where(x => x.Session.Status == SessionStatus.Closed && x.Session.StartedAt >= x.EnrolledAt)
-                .Select(x => x.Session.Id)
-                .ToListAsync();
-
-            if (sessionIds.Count == 0)
+            if (!sessionCounts.TryGetValue(student.Id, out var sessionCount) || sessionCount == 0)
             {
                 student.AttendanceRate = null;
                 student.IsAttendanceFlagged = false;
                 continue;
             }
 
-            var presentOrLate = await _db.Attendances
-                .CountAsync(a => sessionIds.Contains(a.SessionId) && a.StudentId == student.Id && a.Status != AttendanceStatus.Absent);
-
-            var rate = Math.Round(100m * presentOrLate / sessionIds.Count, 1);
+            var presentOrLate = presentOrLateCounts.GetValueOrDefault(student.Id);
+            var rate = Math.Round(100m * presentOrLate / sessionCount, 1);
             student.AttendanceRate = rate;
             student.IsAttendanceFlagged = rate < threshold;
         }

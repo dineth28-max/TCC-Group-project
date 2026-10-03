@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardShell from "./DashboardShell";
 import { listClasses } from "../api/classes";
@@ -15,6 +15,15 @@ import {
   getCollectionSummary,
 } from "../api/fees";
 import { Wallet, CreditCard, Play, Plus, Percent, CheckCircle, Clock, Banknote } from "lucide-react";
+
+const INVOICE_PAGE_SIZE = 50;
+const INVOICE_STATUSES = ["All", "Paid", "Partial", "Pending", "Overdue"];
+const STATUS_BADGE = {
+  Paid: { className: "bg-emerald-50 text-emerald-700 border-emerald-200/60", dot: "bg-[#C8FF3D] border border-emerald-600" },
+  Partial: { className: "bg-blue-50 text-blue-700 border-blue-200/60", dot: "bg-blue-500" },
+  Pending: { className: "bg-amber-50 text-amber-700 border-amber-200/60", dot: "bg-amber-500" },
+  Overdue: { className: "bg-rose-50 text-rose-700 border-rose-200/60", dot: "bg-rose-500" },
+};
 
 const thisPeriod = () => {
   const now = new Date();
@@ -34,6 +43,24 @@ export default function FeesManagement() {
   const [error, setError] = useState(null);
   const [billingResult, setBillingResult] = useState(null);
   const [billingBusy, setBillingBusy] = useState(false);
+  const [invoiceStatus, setInvoiceStatus] = useState("All");
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [invoicePage, setInvoicePage] = useState(0);
+
+  const filteredInvoices = useMemo(() => {
+    const term = invoiceSearch.trim().toLowerCase();
+    return invoices.filter(
+      (i) =>
+        (invoiceStatus === "All" || i.status === invoiceStatus) &&
+        (!term || i.studentName.toLowerCase().includes(term) || i.subject.toLowerCase().includes(term))
+    );
+  }, [invoices, invoiceStatus, invoiceSearch]);
+  const invoicePageCount = Math.max(1, Math.ceil(filteredInvoices.length / INVOICE_PAGE_SIZE));
+  const currentInvoicePage = Math.min(invoicePage, invoicePageCount - 1);
+  const pagedInvoices = filteredInvoices.slice(
+    currentInvoicePage * INVOICE_PAGE_SIZE,
+    (currentInvoicePage + 1) * INVOICE_PAGE_SIZE
+  );
 
   async function loadAll() {
     const [c, s, fs, d, inv, sum] = await Promise.all([
@@ -342,6 +369,40 @@ export default function FeesManagement() {
           <span className="text-xs text-slate-500">{invoices.length} invoices generated</span>
         </div>
 
+        {invoices.length > 0 && (
+          <div className="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
+            {INVOICE_STATUSES.map((status) => {
+              const count = status === "All" ? invoices.length : invoices.filter((i) => i.status === status).length;
+              return (
+                <button
+                  key={status}
+                  onClick={() => {
+                    setInvoiceStatus(status);
+                    setInvoicePage(0);
+                  }}
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition cursor-pointer ${
+                    invoiceStatus === status
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {status} ({count})
+                </button>
+              );
+            })}
+            <input
+              type="search"
+              placeholder="Search student or class..."
+              value={invoiceSearch}
+              onChange={(e) => {
+                setInvoiceSearch(e.target.value);
+                setInvoicePage(0);
+              }}
+              className="ml-auto w-full sm:w-64 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:bg-white focus:border-[#2457FF]"
+            />
+          </div>
+        )}
+
         {invoices.length === 0 ? (
           <div className="p-8 text-center text-xs text-slate-400">
             No invoices for this billing cycle yet. Click "Run Monthly Billing" above to generate invoices.
@@ -361,7 +422,7 @@ export default function FeesManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {invoices.map((i) => (
+                {pagedInvoices.map((i) => (
                   <tr key={i.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-5 font-semibold text-xs text-slate-900">
                       {i.studentName}
@@ -374,17 +435,14 @@ export default function FeesManagement() {
                       {formatCurrency(i.amountPaid)}
                     </td>
                     <td className="py-3.5 px-5">
-                      {i.status === "Paid" ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#C8FF3D] border border-emerald-600" />
-                          Paid
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          Pending
-                        </span>
-                      )}
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          (STATUS_BADGE[i.status] || STATUS_BADGE.Pending).className
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${(STATUS_BADGE[i.status] || STATUS_BADGE.Pending).dot}`} />
+                        {i.status}
+                      </span>
                     </td>
                     <td className="py-3.5 px-5 text-xs text-slate-500">{i.dueDate}</td>
                     <td className="py-3.5 px-5 text-right">
@@ -413,6 +471,35 @@ export default function FeesManagement() {
                 ))}
               </tbody>
             </table>
+            <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>
+                {filteredInvoices.length === 0
+                  ? "No invoices match this filter"
+                  : `Showing ${currentInvoicePage * INVOICE_PAGE_SIZE + 1}–${Math.min(
+                      (currentInvoicePage + 1) * INVOICE_PAGE_SIZE,
+                      filteredInvoices.length
+                    )} of ${filteredInvoices.length}`}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setInvoicePage(currentInvoicePage - 1)}
+                  disabled={currentInvoicePage === 0}
+                  className="px-3 py-1 rounded-lg border border-slate-200 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {currentInvoicePage + 1} of {invoicePageCount}
+                </span>
+                <button
+                  onClick={() => setInvoicePage(currentInvoicePage + 1)}
+                  disabled={currentInvoicePage >= invoicePageCount - 1}
+                  className="px-3 py-1 rounded-lg border border-slate-200 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

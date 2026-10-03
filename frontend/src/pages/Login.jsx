@@ -383,7 +383,7 @@ export default function Login() {
             {/* Bottom Footer Note */}
             <div className="mt-6 text-center sm:text-left">
               <span className="text-[10px] text-[#558178] uppercase tracking-widest font-semibold">
-                CSMAS Institute Management System • Powered by VERTICAL
+                CSMAS Institute Management System • Powered by FORTNEXCES
               </span>
             </div>
 

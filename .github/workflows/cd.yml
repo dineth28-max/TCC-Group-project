@@ -31,13 +31,10 @@ jobs:
       #   shell: bash
       #   run: |
       #     set -euo pipefail
-      #     sudo rm -rf "$DEPLOY_DIR/nginx.conf"
-      #     sudo mkdir -p "$DEPLOY_DIR/certs"
-      #     sudo cp "$GITHUB_WORKSPACE/repo/DEPloyment/nginx/nginx.conf" "$DEPLOY_DIR/nginx.conf"
-      #     # Only seed the self-signed cert if the server has none, so a real cert is never overwritten
-      #     if [ ! -f "$DEPLOY_DIR/certs/fullchain.pem" ] || [ ! -f "$DEPLOY_DIR/certs/privkey.pem" ]; then
-      #       sudo cp "$GITHUB_WORKSPACE/repo/DEPloyment/nginx/certs/"*.pem "$DEPLOY_DIR/certs/"
-      #     fi
+      #     # rm -rf: if tc.yml ever ran before this file existed, Docker left an empty directory here
+      #     sudo rm -rf "$DEPLOY_DIR/nginx/nginx.conf"
+      #     sudo mkdir -p "$DEPLOY_DIR/nginx"
+      #     sudo cp "$GITHUB_WORKSPACE/repo/DEPloyment/nginx/nginx.conf" "$DEPLOY_DIR/nginx/nginx.conf"
 
       - name: docker login
         shell: bash
@@ -57,7 +54,7 @@ jobs:
           sudo docker rm -f csmas.mysql csmas.backend csmas.frontend csmas.nginx csmas.adminer 2>/dev/null || true
 
           echo "Checking for other containers still holding our host ports"
-          for port in 3307 18080 3000 8090 8443 18081; do
+          for port in 3307 18080 3000 8090 18081; do
             cid=$(sudo docker ps -q --filter "publish=$port")
             if [ -n "$cid" ]; then
               echo "Port $port is held by container $cid, stopping it"

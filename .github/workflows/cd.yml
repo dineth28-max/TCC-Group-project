@@ -2,7 +2,7 @@ name: CD part
 
 on:
   workflow_run:
-    workflows: ["CIssss"]
+    workflows: ["CI"]
     types:
       - completed
 
@@ -16,7 +16,7 @@ jobs:
         working-directory: /home/ubuntu/TCC
 
     env:
-      DEPLOY_DIR: /home/ubuntu/TCC/nginx
+      DEPLOY_DIR: /home/ubuntu/TCC
 
       COMPOSE_FILE: tc.yml
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

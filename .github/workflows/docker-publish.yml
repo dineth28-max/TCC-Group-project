@@ -16,6 +16,9 @@ jobs:
           - service: frontend
             context: ./frontend
             image: csmas-frontend
+          - service: ai-service
+            context: ./ai-service
+            image: csmas-ai-service
     steps:
       - name: Checkout
         uses: actions/checkout@v4

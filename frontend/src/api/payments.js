@@ -8,7 +8,8 @@ export const getRevenueSplit = () => apiClient.get("/settings/revenue-split").th
 
 export const updateRevenueSplit = (payload) => apiClient.put("/settings/revenue-split", payload).then((r) => r.data);
 
-export const getTeacherRevenueSummary = () => apiClient.get("/teacher-revenue/summary").then((r) => r.data);
+export const getTeacherRevenueSummary = (params = {}) =>
+  apiClient.get("/teacher-revenue/summary", { params }).then((r) => r.data);
 
 export const getClassRevenue = (params = {}) =>
   apiClient.get("/teacher-revenue/by-class", { params }).then((r) => r.data);

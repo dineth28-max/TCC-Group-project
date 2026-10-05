@@ -28,6 +28,7 @@ import NotificationsManagement from "./pages/NotificationsManagement";
 import BranchesManagement from "./pages/BranchesManagement";
 import SettingsManagement from "./pages/SettingsManagement";
 import AdminTeacherRevenues from "./pages/AdminTeacherRevenues";
+import AdminTeacherEarnings from "./pages/AdminTeacherEarnings";
 import AdminTeacherBankDetails from "./pages/AdminTeacherBankDetails";
 import AdminTeacherRevenueTransactions from "./pages/AdminTeacherRevenueTransactions";
 import AdminScheduleRequests from "./pages/AdminScheduleRequests";
@@ -244,7 +245,7 @@ export default function App() {
               path="/teacher-revenues"
               element={
                 <ProtectedRoute roles={MANAGEMENT_ROLES}>
-                  <AdminTeacherRevenues />
+                  <AdminTeacherEarnings />
                 </ProtectedRoute>
               }
             />

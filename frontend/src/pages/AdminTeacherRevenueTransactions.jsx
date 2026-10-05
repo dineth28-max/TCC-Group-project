@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardShell from "./DashboardShell";
 import { listUsers } from "../api/users";
 import { listTeacherRevenueTransactions, markTeacherEarningPaid } from "../api/payments";
@@ -7,8 +8,15 @@ import { Receipt, CheckCircle, Clock, Filter, ArrowUpRight } from "lucide-react"
 const POLL_MS = 5000;
 
 export default function AdminTeacherRevenueTransactions() {
+  // The Teacher Earnings page links here pre-filtered (?teacherId=&payoutStatus=&dateFrom=&dateTo=).
+  const [searchParams] = useSearchParams();
   const [teachers, setTeachers] = useState([]);
-  const [filters, setFilters] = useState({ teacherId: "", payoutStatus: "", dateFrom: "", dateTo: "" });
+  const [filters, setFilters] = useState(() => ({
+    teacherId: searchParams.get("teacherId") || "",
+    payoutStatus: searchParams.get("payoutStatus") || "",
+    dateFrom: searchParams.get("dateFrom") || "",
+    dateTo: searchParams.get("dateTo") || "",
+  }));
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -155,7 +163,7 @@ export default function AdminTeacherRevenueTransactions() {
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-xs text-slate-400">
-                    No revenue transactions found matching filters.
+                    {loading ? "Loading revenue transactions..." : "No revenue transactions found matching filters."}
                   </td>
                 </tr>
               ) : (

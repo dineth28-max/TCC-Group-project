@@ -29,32 +29,65 @@ public class TeacherRevenueController : TenantScopedController
         _auditLog = auditLog;
     }
 
+    /// <summary>Per-teacher earnings for the Teacher Earnings page, filtered by earning date (inclusive).</summary>
     [HttpGet("summary")]
-    public async Task<ActionResult<TeacherRevenueOverviewResponse>> Summary()
+    public async Task<ActionResult<TeacherRevenueOverviewResponse>> Summary([FromQuery] string? from, [FromQuery] string? to)
     {
-        var query = _db.TeacherEarnings.Include(e => e.TeacherUser).AsQueryable();
+        var (fromAt, toAt) = ParseRange(from, to);
+        if (fromAt >= toAt) return BadRequest(new { message = "The start date must be on or before the end date." });
+
+        var query = _db.TeacherEarnings.AsQueryable();
+        if (fromAt.HasValue) query = query.Where(e => e.CreatedAt >= fromAt);
+        if (toAt.HasValue) query = query.Where(e => e.CreatedAt < toAt);
         if (IsBranchScoped) query = query.Where(e => e.TeacherUser!.BranchId == CurrentBranchId);
 
-        var earnings = await query.ToListAsync();
-        var teachers = earnings
-            .GroupBy(e => new { e.TeacherUserId, Name = e.TeacherUser?.FullName ?? "" })
-            .Select(g => new TeacherRevenueSummaryRow(g.Key.TeacherUserId, g.Key.Name, g.Sum(e => e.NetAmount), g.Sum(e => e.CommissionAmount), g.Count()))
+        var totals = await query
+            .GroupBy(e => e.TeacherUserId)
+            .Select(g => new
+            {
+                TeacherUserId = g.Key,
+                Gross = g.Sum(e => e.GrossAmount),
+                Net = g.Sum(e => e.NetAmount),
+                Commission = g.Sum(e => e.CommissionAmount),
+                Unpaid = g.Sum(e => e.PayoutStatus == "Paid" ? 0m : e.NetAmount),
+                Count = g.Count(),
+                LastEarnedAt = g.Max(e => e.CreatedAt),
+            })
+            .ToListAsync();
+
+        var teacherIds = totals.Select(t => t.TeacherUserId).ToList();
+        var teachers = await _db.Users
+            .Include(u => u.Branch)
+            .Where(u => teacherIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id);
+
+        var rows = totals
+            .Select(t =>
+            {
+                teachers.TryGetValue(t.TeacherUserId, out var teacher);
+                return new TeacherRevenueSummaryRow(
+                    t.TeacherUserId, teacher?.FullName ?? "", teacher?.Branch?.Name,
+                    t.Gross, t.Net, t.Commission, t.Unpaid, t.Count, t.LastEarnedAt);
+            })
             .OrderByDescending(r => r.TotalNetEarned)
             .ToList();
 
-        return Ok(new TeacherRevenueOverviewResponse(teachers, earnings.Sum(e => e.CommissionAmount)));
+        return Ok(new TeacherRevenueOverviewResponse(rows, rows.Sum(r => r.TotalCommission)));
     }
 
     /// <summary>Per-class revenue for the Class Revenue page, filtered by payment date (inclusive).</summary>
     [HttpGet("by-class")]
     public async Task<ActionResult<List<ClassRevenueRow>>> ByClass([FromQuery] string? from, [FromQuery] string? to)
     {
-        var fromAt = DateOnly.TryParse(from, out var fromDate) ? fromDate.ToDateTime(TimeOnly.MinValue) : DateTime.MinValue;
-        var toAt = DateOnly.TryParse(to, out var toDate) ? toDate.ToDateTime(TimeOnly.MinValue).AddDays(1) : DateTime.MaxValue;
+        var (fromAt, toAt) = ParseRange(from, to);
         if (fromAt >= toAt) return BadRequest(new { message = "The start date must be on or before the end date." });
 
-        var payments = _db.Payments.Where(p => p.PaidAt >= fromAt && p.PaidAt < toAt);
-        if (IsBranchScoped) payments = payments.Where(p => p.Invoice!.Student!.BranchId == CurrentBranchId);
+        // Both halves are scoped by the class's branch so a row's collected total and its split
+        // always describe the same set of payments.
+        var payments = _db.Payments.AsQueryable();
+        if (fromAt.HasValue) payments = payments.Where(p => p.PaidAt >= fromAt);
+        if (toAt.HasValue) payments = payments.Where(p => p.PaidAt < toAt);
+        if (IsBranchScoped) payments = payments.Where(p => p.Invoice!.Class!.BranchId == CurrentBranchId);
         var paymentTotals = await payments
             .GroupBy(p => p.Invoice!.ClassId)
             .Select(g => new
@@ -66,8 +99,10 @@ public class TeacherRevenueController : TenantScopedController
             })
             .ToDictionaryAsync(x => x.ClassId);
 
-        var earnings = _db.TeacherEarnings.Where(e => e.CreatedAt >= fromAt && e.CreatedAt < toAt);
-        if (IsBranchScoped) earnings = earnings.Where(e => e.TeacherUser!.BranchId == CurrentBranchId);
+        var earnings = _db.TeacherEarnings.AsQueryable();
+        if (fromAt.HasValue) earnings = earnings.Where(e => e.CreatedAt >= fromAt);
+        if (toAt.HasValue) earnings = earnings.Where(e => e.CreatedAt < toAt);
+        if (IsBranchScoped) earnings = earnings.Where(e => e.PaymentTransaction!.Invoice!.Class!.BranchId == CurrentBranchId);
         var earningTotals = await earnings
             .GroupBy(e => e.PaymentTransaction!.Invoice!.ClassId)
             .Select(g => new { ClassId = g.Key, Net = g.Sum(e => e.NetAmount), Commission = g.Sum(e => e.CommissionAmount) })
@@ -165,6 +200,11 @@ public class TeacherRevenueController : TenantScopedController
 
         return Ok(new TeacherBankDetailResponse(teacherId, detail.AccountHolderName, detail.BankName, Mask(request.AccountNumber.Trim()), true));
     }
+
+    /// <summary>Turns an inclusive yyyy-MM-dd range into [from, to) bounds; a missing or unparseable end is left open.</summary>
+    private static (DateTime? From, DateTime? To) ParseRange(string? from, string? to) => (
+        DateOnly.TryParse(from, out var fromDate) ? fromDate.ToDateTime(TimeOnly.MinValue) : null,
+        DateOnly.TryParse(to, out var toDate) ? toDate.ToDateTime(TimeOnly.MinValue).AddDays(1) : null);
 
     private static string Mask(string value) =>
         value.Length <= 4 ? value : new string('*', value.Length - 4) + value[^4..];

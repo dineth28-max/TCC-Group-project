@@ -234,6 +234,14 @@ def main():
     if by_class is not None and len(by_class) == 0:
         results.append((False, "class revenue empty for current month", ""))
     check("class revenue inverted range", "GET", "/teacher-revenue/by-class?from=2026-12-31&to=2026-01-01", admin, expect=(400,))
+    status, earnings = check("teacher earnings this month", "GET", f"/teacher-revenue/summary?from={time.strftime('%Y-%m')}-01&to={time.strftime('%Y-%m-%d')}", admin)
+    if earnings is not None:
+        teachers = earnings.get("teachers", [])
+        if not teachers:
+            results.append((False, "teacher earnings empty for current month", ""))
+        elif any(t["unpaidNet"] > t["totalNetEarned"] or not t["teacherName"] for t in teachers):
+            results.append((False, "teacher earnings row inconsistent", json.dumps(teachers[0])[:200]))
+    check("teacher earnings inverted range", "GET", "/teacher-revenue/summary?from=2026-12-31&to=2026-01-01", admin, expect=(400,))
     # Student 1 is in Colombo (branch 1); class 61+ are Gampaha classes.
     check("enroll in other branch's class rejected", "POST", "/students/1/enrollments", admin, expect=(400,),
           raw=b"75", content_type="application/json")

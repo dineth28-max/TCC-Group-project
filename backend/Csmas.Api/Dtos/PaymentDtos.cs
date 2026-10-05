@@ -23,7 +23,18 @@ public record PaymentTransactionResponse(
 
 public record GatewayWebhookRequest(int TransactionId, string GatewayReference, string Status);
 
-public record TeacherRevenueSummaryRow(int TeacherUserId, string TeacherName, decimal TotalNetEarned, decimal TotalCommission, int TransactionCount);
+/// <summary>One teacher's online-payment earnings in a date range. UnpaidNet is the part of
+/// TotalNetEarned the institute has not yet paid out (PayoutStatus != "Paid").</summary>
+public record TeacherRevenueSummaryRow(
+    int TeacherUserId,
+    string TeacherName,
+    string? BranchName,
+    decimal TotalGross,
+    decimal TotalNetEarned,
+    decimal TotalCommission,
+    decimal UnpaidNet,
+    int TransactionCount,
+    DateTime LastEarnedAt);
 
 /// <summary>Revenue collected for one class in a date range, across every payment method. The
 /// teacher/institute split only exists for online payments (TeacherEarning rows); counter payments
